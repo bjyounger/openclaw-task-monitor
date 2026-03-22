@@ -1,0 +1,14 @@
+{
+  "id": "task-monitor",
+  "name": "Task Monitor",
+  "version": "1.0.0",
+  "description": "监控子任务生命周期并自动报告",
+  "openclaw": {
+    "extensions": ["./index.ts"]
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}
