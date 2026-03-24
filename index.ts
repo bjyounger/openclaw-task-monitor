@@ -469,12 +469,20 @@ const plugin = {
                 );
                 
                 // 移动到 completed 目录
-                if (fs.existsSync(completedDir)) {
-                  const targetPath = path.join(completedDir, file);
-                  if (!fs.existsSync(targetPath)) {
-                    fs.renameSync(filePath, targetPath);
-                    api.logger.info?.(`[task-monitor] Task file moved to completed: ${file}`);
-                  }
+                if (!fs.existsSync(completedDir)) {
+                  fs.mkdirSync(completedDir, { recursive: true });
+                }
+                const targetPath = path.join(completedDir, file);
+                if (fs.existsSync(targetPath)) {
+                  // 目标文件已存在，添加时间戳后缀
+                  const timestamp = Date.now();
+                  const newFileName = `${file.replace('.md', '')}_${timestamp}.md`;
+                  const newTargetPath = path.join(completedDir, newFileName);
+                  fs.renameSync(filePath, newTargetPath);
+                  api.logger.info?.(`[task-monitor] Task file renamed due to conflict: ${newFileName}`);
+                } else {
+                  fs.renameSync(filePath, targetPath);
+                  api.logger.info?.(`[task-monitor] Task file moved to completed: ${file}`);
                 }
               }
               // ==================== 停滞任务检测 ====================
@@ -512,8 +520,8 @@ const plugin = {
                 }
               }
               // ==================== 主任务超时检测 (v8 新增) ====================
-              // pending 状态超过 60 分钟视为超时
-              else if ((content.includes("**状态**: pending") || content.includes("状态: pending")) && elapsed > 3600) {
+              // pending 状态超过 60 分钟视为超时（独立检测，不受停滞检测影响）
+              if ((content.includes("**状态**: pending") || content.includes("状态: pending")) && elapsed > 3600) {
                 const taskName = file.replace(".md", "");
                 await alertManager?.sendAlert(
                   `main_task_timeout_${taskName}`,
@@ -523,7 +531,7 @@ const plugin = {
                 api.logger.warn?.(`[task-monitor] Main task timeout (pending): ${file}`);
               }
               // running 状态超过 60 分钟视为超时
-              else if ((content.includes("**状态**: running") || content.includes("状态: running")) && elapsed > 3600) {
+              if ((content.includes("**状态**: running") || content.includes("状态: running")) && elapsed > 3600) {
                 const taskName = file.replace(".md", "");
                 await alertManager?.sendAlert(
                   `main_task_timeout_${taskName}`,
@@ -1046,7 +1054,7 @@ const plugin = {
     process.on("SIGTERM", cleanup);
     process.on("SIGINT", cleanup);
 
-    api.logger.info?.("[task-monitor] Plugin registration complete (v9.1)");
+    api.logger.info?.("[task-monitor] Plugin registration complete (v9.2)");
   },
 };
 

@@ -797,8 +797,55 @@
           "duration": 315247
         }
       ]
+    },
+    {
+      "id": "efb8d6a9-d057-4f11-9701-1db7716349de",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "task-monitor-code-review",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:37419b5c-ddfa-4326-a689-958d3fb37ca2",
+        "taskDescription": "task-monitor-code-review",
+        "isMainTask": false
+      },
+      "startTime": 1774336993077,
+      "lastHeartbeat": 1774336993077,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774337198936,
+          "outcome": "ok",
+          "duration": 205859
+        }
+      ]
+    },
+    {
+      "id": "667a6abd-aa4f-4daa-9c44-ba17ce4d4ab2",
+      "type": "sub",
+      "status": "running",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "openclaw-main-task-detection",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:9461af7b-c1c8-4532-a28b-858d0ef0cf18",
+        "taskDescription": "openclaw-main-task-detection",
+        "isMainTask": false
+      },
+      "startTime": 1774338813872,
+      "lastHeartbeat": 1774338813872,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": []
     }
   ],
   "version": "2.0.0",
-  "lastUpdated": 1774333861515
+  "lastUpdated": 1774338813872
 }
