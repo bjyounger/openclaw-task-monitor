@@ -399,7 +399,7 @@ async function sendNotification(alertType: string, message: string): Promise<voi
 const plugin = {
   id: "task-monitor",
   name: "Task Monitor",
-  description: "监控子任务生命周期、自动重试、任务链追踪、进度报告、主任务完成通知和停滞任务检测（v7）",
+  description: "监控子任务生命周期、自动重试、任务链追踪、进度报告、主任务监控、停滞检测、超时检测（v9.1）",
   configSchema: emptyPluginConfigSchema(),
 
   register(api: OpenClawPluginApi) {
@@ -502,7 +502,7 @@ const plugin = {
                    t.metadata?.mainTaskId === taskName)
                 );
                 
-                if (!hasActiveSubagent && allTasks.filter(t => t.status === 'running').length === 0) {
+                if (!hasActiveSubagent) {
                   await alertManager?.sendAlert(
                     `stalled_running_${taskName}`,
                     `⚠️ 任务状态不一致\n\n任务: ${taskName}\n状态: running\n停滞时间: ${Math.floor(elapsed / 60)} 分钟\n原因: 任务状态为 running 但无活跃子任务执行`,
@@ -1046,7 +1046,7 @@ const plugin = {
     process.on("SIGTERM", cleanup);
     process.on("SIGINT", cleanup);
 
-    api.logger.info?.("[task-monitor] Plugin registration complete (v9)");
+    api.logger.info?.("[task-monitor] Plugin registration complete (v9.1)");
   },
 };
 

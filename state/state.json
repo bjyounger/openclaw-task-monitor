@@ -770,8 +770,35 @@
       "retryCount": 0,
       "maxRetries": 2,
       "retryHistory": []
+    },
+    {
+      "id": "a57d609a-a445-4bff-8f1c-f81238f5aa86",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "task-monitor-v9-test",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:c50a746e-c705-4c66-989a-99ab1111423d",
+        "taskDescription": "task-monitor-v9-test",
+        "isMainTask": false
+      },
+      "startTime": 1774333546268,
+      "lastHeartbeat": 1774333546268,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774333861515,
+          "outcome": "ok",
+          "duration": 315247
+        }
+      ]
     }
   ],
   "version": "2.0.0",
-  "lastUpdated": 1774283582618
+  "lastUpdated": 1774333861515
 }
