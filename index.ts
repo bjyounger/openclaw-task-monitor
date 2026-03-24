@@ -511,6 +511,27 @@ const plugin = {
                   api.logger.warn?.(`[task-monitor] Stalled task detected (running, no subagent): ${file}`);
                 }
               }
+              // ==================== 主任务超时检测 (v8 新增) ====================
+              // pending 状态超过 60 分钟视为超时
+              else if ((content.includes("**状态**: pending") || content.includes("状态: pending")) && elapsed > 3600) {
+                const taskName = file.replace(".md", "");
+                await alertManager?.sendAlert(
+                  `main_task_timeout_${taskName}`,
+                  `⏰ 主任务超时\n\n任务: ${taskName}\n状态: pending\n运行时间: ${Math.floor(elapsed / 60)} 分钟\n原因: 任务创建后长时间未开始`,
+                  "main_task_timeout"
+                );
+                api.logger.warn?.(`[task-monitor] Main task timeout (pending): ${file}`);
+              }
+              // running 状态超过 60 分钟视为超时
+              else if ((content.includes("**状态**: running") || content.includes("状态: running")) && elapsed > 3600) {
+                const taskName = file.replace(".md", "");
+                await alertManager?.sendAlert(
+                  `main_task_timeout_${taskName}`,
+                  `⏰ 主任务超时\n\n任务: ${taskName}\n状态: running\n运行时间: ${Math.floor(elapsed / 60)} 分钟\n原因: 任务执行时间过长`,
+                  "main_task_timeout"
+                );
+                api.logger.warn?.(`[task-monitor] Main task timeout (running): ${file}`);
+              }
             } catch (e) {
               // 忽略单个文件读取错误
             }
@@ -996,8 +1017,7 @@ const plugin = {
     process.on("SIGTERM", cleanup);
     process.on("SIGINT", cleanup);
 
-    console.log("[task-monitor] Plugin registration complete (v7)");
-    api.logger.info?.("[task-monitor] Plugin registration complete (v7)");
+    api.logger.info?.("[task-monitor] Plugin registration complete (v8)");
   },
 };
 

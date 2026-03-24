@@ -1,15 +1,68 @@
 # OpenClaw Task Monitor Plugin
 
-Task monitoring plugin for OpenClaw with automatic retry mechanism.
+Task monitoring plugin for OpenClaw with automatic retry mechanism and task chain tracking.
 
 ## Features
 
 - **Task State Management**: Track task lifecycle (pending, running, completed, failed, timeout, etc.)
+- **Task Chain Tracking**: Track hierarchical task chains (main task → subtasks)
 - **Auto-Retry**: Automatically retry failed/timeout tasks (up to 2 times by default)
 - **Persistent Scheduling**: Retry schedules survive plugin restarts
 - **Safe Execution**: Uses `spawn` with array parameters to prevent command injection
 - **Watchdog**: Cron-based fallback to ensure retries execute even if plugin restarts
 - **Notifications**: Send retry alerts and final failure notifications via WeCom
+
+## Task Chain Tracking (v4)
+
+### Overview
+
+Task chains track hierarchical task relationships:
+- Main task spawned from user request
+- Subtasks spawned from main task
+- Nested subtasks (grandchild tasks)
+
+### Data Structures
+
+```typescript
+interface TaskChain {
+  mainTaskId: string;          // Main task ID
+  mainSessionKey: string;      // Main task session key
+  userId: string;              // User ID
+  status: TaskChainStatus;     // dispatching | waiting | completed | timeout | orphaned
+  subtasks: SubtaskInfo[];     // Subtask list
+  createdAt: number;           // Creation timestamp
+  updatedAt: number;           // Last update timestamp
+  timeoutMs: number;           // Timeout (default 15 minutes)
+}
+
+interface SubtaskInfo {
+  runId: string;               // Subtask run ID
+  sessionKey: string;          // Subtask session key
+  label: string;               // Label/description
+  status: SubtaskStatus;       // pending | running | completed | failed | timeout
+  startedAt: number;           // Start timestamp
+  endedAt?: number;            // End timestamp (optional)
+}
+```
+
+### How It Works
+
+1. **Main Task Detection**: When a subagent is spawned, check if `childSessionKey` contains `:subagent:`
+   - No `:subagent:` → Main task (create new chain)
+   - Has `:subagent:` → Subtask (add to parent chain)
+
+2. **Chain Creation**: Main tasks create a new `TaskChain` record
+
+3. **Subtask Addition**: Subtasks are added to their parent chain
+
+4. **Status Updates**: When subtasks end, their status is updated in the chain
+
+5. **Timeout Detection**: Every minute, check if chains exceed their timeout (default 15 min)
+
+### Storage
+
+- `state/task-chains.json`: Persistent chain storage
+- `state/task-chains.lock`: File lock for concurrent access
 
 ## Installation
 

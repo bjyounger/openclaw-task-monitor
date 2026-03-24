@@ -5,8 +5,11 @@ import * as path from 'path';
 
 /**
  * 任务类型
+ * - main: 主任务
+ * - sub: 子任务（通过 sessions_spawn 创建）
+ * - embedded: 嵌入式运行（主任务内部的 LLM 调用）
  */
-export type TaskType = 'main' | 'sub';
+export type TaskType = 'main' | 'sub' | 'embedded';
 
 /**
  * 任务状态 (v3 扩展版)

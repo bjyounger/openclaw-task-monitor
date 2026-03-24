@@ -1,1 +1,777 @@
-{"tasks":[],"version":"1.0","lastUpdated":"2026-03-21T23:48:49+08:00"}
+{
+  "tasks": [
+    {
+      "id": "45e1581d-36c6-428a-8711-db4e1d13288f",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:b40ab4ff-5f16-445a-ae0b-3fbd2a0466e0"
+      },
+      "startTime": 1774152227309,
+      "lastHeartbeat": 1774152227309,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774152481343,
+          "outcome": "ok",
+          "duration": 254034
+        }
+      ]
+    },
+    {
+      "id": "d8d599f0-33b7-4292-92be-e4165e8d1324",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:92f2e266-aed6-4b45-8ed7-af026b48de8a"
+      },
+      "startTime": 1774152980211,
+      "lastHeartbeat": 1774152980211,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774153478659,
+          "outcome": "ok",
+          "duration": 498448
+        }
+      ]
+    },
+    {
+      "id": "cb87753d-b411-4e77-a504-1038e5ad164d",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:1c3ff881-9a31-432c-9b3f-6be61061dbf6"
+      },
+      "startTime": 1774154534526,
+      "lastHeartbeat": 1774154534526,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774154807803,
+          "outcome": "ok",
+          "duration": 273277
+        }
+      ]
+    },
+    {
+      "id": "ded28ab8-3432-4f2f-a70e-4a72e0b98657",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:259b9db3-3622-4275-9d1b-a6c9ce2d20cf"
+      },
+      "startTime": 1774154744142,
+      "lastHeartbeat": 1774154744142,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774154850713,
+          "outcome": "ok",
+          "duration": 106571
+        }
+      ]
+    },
+    {
+      "id": "cda03f1c-49d3-4efc-8678-9c6f08b2e612",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:377dcfaf-fe95-4fc9-a9c1-85b30df01532"
+      },
+      "startTime": 1774155522983,
+      "lastHeartbeat": 1774155522983,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774155839954,
+          "outcome": "ok",
+          "duration": 316971
+        }
+      ]
+    },
+    {
+      "id": "09a6bb4a-bdb8-4a1f-ad14-698344f3e8da",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:af575bbe-2992-4236-b3c6-ad151146837f"
+      },
+      "startTime": 1774162837054,
+      "lastHeartbeat": 1774162837054,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774163283514,
+          "outcome": "ok",
+          "duration": 446460
+        }
+      ]
+    },
+    {
+      "id": "2eb1f7c9-83b5-428e-915a-b73a906792a1",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:0b6c38b6-1e4d-4e5f-a3b5-a5464a67d940"
+      },
+      "startTime": 1774182372818,
+      "lastHeartbeat": 1774182372818,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774182650549,
+          "outcome": "ok",
+          "duration": 277731
+        }
+      ]
+    },
+    {
+      "id": "aa41a147-8d9a-4835-8e0e-fc8f817f6f24",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:a9b09748-9d52-48a8-9531-bce2003a00ec"
+      },
+      "startTime": 1774182643579,
+      "lastHeartbeat": 1774182643579,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774183145226,
+          "outcome": "ok",
+          "duration": 501647
+        }
+      ]
+    },
+    {
+      "id": "6dc53d91-3620-4cd1-9951-5839b66a36cf",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:c4248315-1021-4bfe-999a-28c476004ccf"
+      },
+      "startTime": 1774183798624,
+      "lastHeartbeat": 1774183798624,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774183938647,
+          "outcome": "ok",
+          "duration": 140023
+        }
+      ]
+    },
+    {
+      "id": "0bbc2671-d540-4c2c-856e-9603492434c5",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:89ca7052-5b30-4be6-8486-a17f472474dc"
+      },
+      "startTime": 1774183798987,
+      "lastHeartbeat": 1774183798987,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774184011217,
+          "outcome": "ok",
+          "duration": 212230
+        }
+      ]
+    },
+    {
+      "id": "64c17d23-0b67-4e91-89c7-1c156eedb355",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:99c55aa6-42c5-40d8-aafd-acfcef8d1813"
+      },
+      "startTime": 1774183799198,
+      "lastHeartbeat": 1774183799198,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774183970915,
+          "outcome": "ok",
+          "duration": 171717
+        }
+      ]
+    },
+    {
+      "id": "2be80352-6026-45ed-ace2-98064c20131f",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:3f540ceb-ac25-48a2-a77c-989268628eb4"
+      },
+      "startTime": 1774184289903,
+      "lastHeartbeat": 1774184289903,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774184712795,
+          "outcome": "ok",
+          "duration": 422892
+        }
+      ]
+    },
+    {
+      "id": "5f000794-ebce-4535-9827-13ed2fdb2857",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:40a6db50-f2ee-4d15-8b04-f8086ecb2028"
+      },
+      "startTime": 1774184705213,
+      "lastHeartbeat": 1774184705213,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774184923662,
+          "outcome": "ok",
+          "duration": 218449
+        }
+      ]
+    },
+    {
+      "id": "032e23f6-91f3-4f23-8fa6-7c2eccdfd42a",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:764e8eb9-e1bf-41fd-bb06-b61f80f7090f"
+      },
+      "startTime": 1774184705584,
+      "lastHeartbeat": 1774184705584,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774184979942,
+          "outcome": "ok",
+          "duration": 274358
+        }
+      ]
+    },
+    {
+      "id": "ab72c43d-b2d9-403e-8907-531ac628dfb1",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:58d5da69-4add-436c-bd0c-ddb3b0c654e8"
+      },
+      "startTime": 1774184705828,
+      "lastHeartbeat": 1774184705828,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774184938715,
+          "outcome": "ok",
+          "duration": 232887
+        }
+      ]
+    },
+    {
+      "id": "d91bddd7-fbd9-4040-b4fe-a4b44273e47d",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:ae9b2a99-eb7c-4e3e-8614-2d30eca6c4af"
+      },
+      "startTime": 1774190152271,
+      "lastHeartbeat": 1774190152271,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774191401112,
+          "outcome": "ok",
+          "duration": 1248841
+        }
+      ]
+    },
+    {
+      "id": "33ee2871-c3fc-4340-98ef-a937ff707022",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:9153fe74-d63b-41f8-bf2f-febf9db41ec1"
+      },
+      "startTime": 1774191389791,
+      "lastHeartbeat": 1774191389791,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774192112853,
+          "outcome": "ok",
+          "duration": 723062
+        }
+      ]
+    },
+    {
+      "id": "b2fd0066-cabd-45b5-a0b6-c421f79b34ed",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:bcfa9334-9f52-4f97-8b86-fa0271173c2f"
+      },
+      "startTime": 1774192102027,
+      "lastHeartbeat": 1774192102027,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774192483415,
+          "outcome": "ok",
+          "duration": 381388
+        }
+      ]
+    },
+    {
+      "id": "bdc07782-81b2-4631-b494-d4d0035716b6",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "scan-learnings",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:8b0fa43f-b0c4-4a89-9cbe-a9e3aff245df",
+        "taskDescription": "scan-learnings"
+      },
+      "startTime": 1774226396848,
+      "lastHeartbeat": 1774226396848,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774226455670,
+          "outcome": "ok",
+          "duration": 58822
+        }
+      ]
+    },
+    {
+      "id": "5f4b1942-1116-4b9d-9b00-6adafa505deb",
+      "type": "sub",
+      "status": "timeout",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "scan-knowledge-base",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:4968efb4-fc2f-478e-b88b-b7f9db703ac5",
+        "taskDescription": "scan-knowledge-base"
+      },
+      "startTime": 1774226397253,
+      "lastHeartbeat": 1774226704599,
+      "retryCount": 1,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774226668682,
+          "outcome": "timeout",
+          "duration": 271429
+        }
+      ],
+      "lastRetryTime": 1774226668683
+    },
+    {
+      "id": "bef83963-e498-4284-b487-5e4b39dda80b",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "scan-rules",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:bda84a60-485f-4e6d-9beb-e92ddcf0bd8f",
+        "taskDescription": "scan-rules"
+      },
+      "startTime": 1774226397460,
+      "lastHeartbeat": 1774226397460,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774226467878,
+          "outcome": "ok",
+          "duration": 70418
+        }
+      ]
+    },
+    {
+      "id": "5c3c6da2-89bb-4398-841b-5412ef9f9396",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "scan-completed-tasks",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:23766b30-a88b-4206-9a78-fd749f49cfa3",
+        "taskDescription": "scan-completed-tasks"
+      },
+      "startTime": 1774226397625,
+      "lastHeartbeat": 1774226397625,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774226499908,
+          "outcome": "ok",
+          "duration": 102283
+        }
+      ]
+    },
+    {
+      "id": "df2319d1-e081-4bfb-8a69-9d29932c256e",
+      "type": "sub",
+      "status": "timeout",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "task-notification-review",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:83167464-b3a4-4594-85e6-71e2c64cbad8",
+        "taskDescription": "task-notification-review"
+      },
+      "startTime": 1774247506151,
+      "lastHeartbeat": 1774247825113,
+      "retryCount": 1,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774247793396,
+          "outcome": "timeout",
+          "duration": 287245
+        }
+      ],
+      "lastRetryTime": 1774247793398
+    },
+    {
+      "id": "91a6fa4c-24f0-4bba-b022-33920d01b371",
+      "type": "sub",
+      "status": "timeout",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "openclaw-expert-review",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:7512c7b7-37f5-4100-aea6-5a42d525bc47",
+        "taskDescription": "openclaw-expert-review"
+      },
+      "startTime": 1774248734219,
+      "lastHeartbeat": 1774249155148,
+      "retryCount": 1,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774249124989,
+          "outcome": "timeout",
+          "duration": 390770
+        }
+      ],
+      "lastRetryTime": 1774249124990
+    },
+    {
+      "id": "8f40b501-b3fa-44fc-83b1-7516014b0932",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "task-monitor-fusion-review",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:a8b26110-669b-407b-873a-5b37ffd026aa",
+        "taskDescription": "task-monitor-fusion-review"
+      },
+      "startTime": 1774252715186,
+      "lastHeartbeat": 1774252715186,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774252907357,
+          "outcome": "ok",
+          "duration": 192171
+        }
+      ]
+    },
+    {
+      "id": "d30a43aa-945a-4ec7-a8a9-deac19317305",
+      "type": "sub",
+      "status": "timeout",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "verify-openclaw-events",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:b8fd0692-77e8-486e-9d62-84212f9d1ce9",
+        "taskDescription": "verify-openclaw-events"
+      },
+      "startTime": 1774253228109,
+      "lastHeartbeat": 1774253651423,
+      "retryCount": 1,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774253619199,
+          "outcome": "timeout",
+          "duration": 391090
+        }
+      ],
+      "lastRetryTime": 1774253619202
+    },
+    {
+      "id": "ef7c9fd9-5a47-4be5-86a4-807ce47e99e3",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "impl-task-chain-tracking",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:fc28bc15-302b-47a2-a463-964bd3679a7e",
+        "taskDescription": "impl-task-chain-tracking"
+      },
+      "startTime": 1774256980173,
+      "lastHeartbeat": 1774256980173,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774257462567,
+          "outcome": "ok",
+          "duration": 482394
+        }
+      ]
+    },
+    {
+      "id": "a001425a-01ba-4a19-8441-a18b0aec7971",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "subtask-feedback-analysis",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:83592726-bb49-42e0-aeeb-caf1a6eed108",
+        "taskDescription": "subtask-feedback-analysis",
+        "isMainTask": false
+      },
+      "startTime": 1774275410355,
+      "lastHeartbeat": 1774275410355,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774275742337,
+          "outcome": "ok",
+          "duration": 331982
+        }
+      ]
+    },
+    {
+      "id": "6468a6de-187e-48bd-9d9c-565fd2ae75e2",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "test-subtask-feedback",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:53897056-eac2-4692-b348-696468e06953",
+        "taskDescription": "test-subtask-feedback",
+        "isMainTask": false
+      },
+      "startTime": 1774280065436,
+      "lastHeartbeat": 1774280065436,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774280204085,
+          "outcome": "ok",
+          "duration": 138649
+        }
+      ]
+    },
+    {
+      "id": "688663ea-34fe-418e-a4a1-3a1ff0ebe1a3",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "test-feedback-v2",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:540e0857-6aa8-40ff-850b-e37a52b3b9b9",
+        "taskDescription": "test-feedback-v2",
+        "isMainTask": false
+      },
+      "startTime": 1774280316487,
+      "lastHeartbeat": 1774280316487,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774280432883,
+          "outcome": "ok",
+          "duration": 116396
+        }
+      ]
+    },
+    {
+      "id": "d5d50ae1-80ef-49a6-af2e-41a07ab91aa5",
+      "type": "sub",
+      "status": "timeout",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "impl-transcript-monitor",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:044aeaff-18a7-4f8b-94df-158904340341",
+        "taskDescription": "impl-transcript-monitor",
+        "isMainTask": false
+      },
+      "startTime": 1774283582618,
+      "lastHeartbeat": 1774283582618,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": []
+    }
+  ],
+  "version": "2.0.0",
+  "lastUpdated": 1774283582618
+}
