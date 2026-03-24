@@ -403,8 +403,8 @@ const plugin = {
   configSchema: emptyPluginConfigSchema(),
 
   register(api: OpenClawPluginApi) {
-    console.log("[task-monitor] Plugin registering (v7 with stalled task detection)...");
-    api.logger.info?.("[task-monitor] Plugin registering (v7 with stalled task detection)...");
+    console.log("[task-monitor] Plugin registering (v9 with main task monitoring)...");
+    api.logger.info?.("[task-monitor] Plugin registering (v9 with main task monitoring)...");
 
     // 初始化状态管理器
     stateManager = new StateManager(STATE_DIR);
@@ -611,6 +611,35 @@ const plugin = {
         // 1. 处理 lifecycle 事件
         if (evt.stream === "lifecycle") {
           const phase = (evt.data as any)?.phase;
+          
+          // 处理 turn_started 事件（主任务开始 - 检查任务记录）
+          if (phase === "turn_started") {
+            // 排除子任务
+            if (evt.sessionKey && !evt.sessionKey.includes(":subagent:")) {
+              api.logger.info?.(`[task-monitor] Main task turn started: ${evt.sessionKey}`);
+              
+              // 5分钟后检查是否有任务记录
+              setTimeout(async () => {
+                const runningDir = path.join(TASKS_DIR, "running");
+                if (fs.existsSync(runningDir)) {
+                  const taskFiles = fs.readdirSync(runningDir).filter(f => f.endsWith(".md"));
+                  // 检查是否有包含当前 sessionKey 的任务记录
+                  const hasRecord = taskFiles.some(f => {
+                    const content = fs.readFileSync(path.join(runningDir, f), "utf-8");
+                    return content.includes(evt.sessionKey) || content.includes(evt.runId || "");
+                  });
+                  
+                  if (!hasRecord && taskFiles.length === 0) {
+                    await alertManager?.sendAlert(
+                      `no_task_record_${evt.sessionKey?.slice(-8)}`,
+                      `⚠️ 主任务未创建任务记录\n\nSession: ${evt.sessionKey}\n提示: 请在 memory/tasks/running/ 目录创建任务记录文件`,
+                      "no_task_record"
+                    );
+                  }
+                }
+              }, 5 * 60 * 1000); // 5分钟后检查
+            }
+          }
           
           // 处理 turn_ended 事件（主任务完成检测）
           if (phase === "turn_ended") {
@@ -1017,7 +1046,7 @@ const plugin = {
     process.on("SIGTERM", cleanup);
     process.on("SIGINT", cleanup);
 
-    api.logger.info?.("[task-monitor] Plugin registration complete (v8)");
+    api.logger.info?.("[task-monitor] Plugin registration complete (v9)");
   },
 };
 
