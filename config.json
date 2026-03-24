@@ -1,0 +1,12 @@
+{
+  "streamToParent": true,
+  "streamFilter": {
+    "toolCalls": true,
+    "thinking": false,
+    "errors": true,
+    "progress": true
+  },
+  "throttle": 3000,
+  "maxMessageLength": 200,
+  "showTimestamp": false
+}

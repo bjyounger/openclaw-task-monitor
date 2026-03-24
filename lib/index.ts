@@ -12,3 +12,12 @@ export type {
 
 export { AlertManager } from './alert-manager';
 export type { AlertConfig, AlertRecord } from './alert-manager';
+
+export { TaskChainManager } from './task-chain';
+export type {
+  TaskChain,
+  TaskChainStatus,
+  SubtaskInfo,
+  SubtaskStatus,
+  TaskChainFile,
+} from './task-chain';
