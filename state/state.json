@@ -852,8 +852,28 @@
         }
       ],
       "lastRetryTime": 1774339084796
+    },
+    {
+      "id": "6a12b6f2-b4fe-43f6-9465-ffaa21d01502",
+      "type": "sub",
+      "status": "timeout",
+      "timeoutMs": 600000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "task-monitor-sprint1-config",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:76f40bc4-3aed-4415-8108-fb4cfa7ef953",
+        "taskDescription": "task-monitor-sprint1-config",
+        "isMainTask": false
+      },
+      "startTime": 1774347983818,
+      "lastHeartbeat": 1774347983818,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": []
     }
   ],
   "version": "2.0.0",
-  "lastUpdated": 1774339116550
+  "lastUpdated": 1774348613004
 }

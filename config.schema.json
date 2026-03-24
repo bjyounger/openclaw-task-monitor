@@ -1,0 +1,205 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Task Monitor Configuration",
+  "description": "Configuration schema for task-monitor plugin",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Configuration version",
+      "default": "1.0.0"
+    },
+    "monitoring": {
+      "type": "object",
+      "description": "Monitoring parameters",
+      "properties": {
+        "subtaskTimeout": {
+          "type": "integer",
+          "description": "Subtask timeout in milliseconds",
+          "minimum": 60000,
+          "default": 600000
+        },
+        "taskChainTimeout": {
+          "type": "integer",
+          "description": "Task chain timeout in milliseconds",
+          "minimum": 60000,
+          "default": 900000
+        },
+        "stalledPendingThreshold": {
+          "type": "integer",
+          "description": "Stalled pending task threshold in milliseconds",
+          "minimum": 60000,
+          "default": 1800000
+        },
+        "stalledRunningThreshold": {
+          "type": "integer",
+          "description": "Stalled running task threshold in milliseconds",
+          "minimum": 60000,
+          "default": 600000
+        },
+        "mainTaskTimeout": {
+          "type": "integer",
+          "description": "Main task timeout in milliseconds",
+          "minimum": 60000,
+          "default": 3600000
+        }
+      }
+    },
+    "retry": {
+      "type": "object",
+      "description": "Retry parameters",
+      "properties": {
+        "maxRetries": {
+          "type": "integer",
+          "description": "Maximum retry attempts",
+          "minimum": 0,
+          "maximum": 5,
+          "default": 2
+        },
+        "checkInterval": {
+          "type": "integer",
+          "description": "Retry check interval in milliseconds",
+          "minimum": 1000,
+          "default": 10000
+        },
+        "spawnTimeout": {
+          "type": "integer",
+          "description": "Spawn retry process timeout in milliseconds",
+          "minimum": 60000,
+          "default": 300000
+        },
+        "backoffMultiplier": {
+          "type": "number",
+          "description": "Backoff multiplier for retry delays",
+          "minimum": 1,
+          "default": 2
+        },
+        "initialDelay": {
+          "type": "integer",
+          "description": "Initial retry delay in milliseconds",
+          "minimum": 10000,
+          "default": 60000
+        }
+      }
+    },
+    "progress": {
+      "type": "object",
+      "description": "Progress reporting parameters",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable progress reporting",
+          "default": true
+        },
+        "reportInterval": {
+          "type": "integer",
+          "description": "Progress report interval in milliseconds",
+          "minimum": 10000,
+          "default": 60000
+        },
+        "timeoutCheckInterval": {
+          "type": "integer",
+          "description": "Timeout check interval in milliseconds",
+          "minimum": 10000,
+          "default": 60000
+        }
+      }
+    },
+    "notification": {
+      "type": "object",
+      "description": "Notification parameters",
+      "properties": {
+        "channel": {
+          "type": "string",
+          "description": "Notification channel",
+          "enum": ["wecom", "telegram", "discord", "none"],
+          "default": "wecom"
+        },
+        "target": {
+          "type": "string",
+          "description": "Notification target",
+          "default": "wecom-agent:YangKe"
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable notifications",
+          "default": true
+        },
+        "throttle": {
+          "type": "integer",
+          "description": "Notification throttle in milliseconds",
+          "minimum": 0,
+          "default": 3000
+        },
+        "maxMessageLength": {
+          "type": "integer",
+          "description": "Maximum message length",
+          "minimum": 50,
+          "default": 200
+        },
+        "quietHours": {
+          "type": "object",
+          "description": "Quiet hours configuration",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false
+            },
+            "start": {
+              "type": "string",
+              "pattern": "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$",
+              "default": "23:00"
+            },
+            "end": {
+              "type": "string",
+              "pattern": "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$",
+              "default": "07:00"
+            }
+          }
+        },
+        "types": {
+          "type": "object",
+          "description": "Notification type toggles",
+          "properties": {
+            "subtaskSpawned": { "type": "boolean", "default": true },
+            "subtaskCompleted": { "type": "boolean", "default": true },
+            "subtaskFailed": { "type": "boolean", "default": true },
+            "subtaskTimeout": { "type": "boolean", "default": true },
+            "mainTaskCompleted": { "type": "boolean", "default": true },
+            "taskChainTimeout": { "type": "boolean", "default": true },
+            "stalledTask": { "type": "boolean", "default": true },
+            "progress": { "type": "boolean", "default": true },
+            "retry": { "type": "boolean", "default": true }
+          }
+        }
+      }
+    },
+    "storage": {
+      "type": "object",
+      "description": "Storage parameters",
+      "properties": {
+        "stateDir": {
+          "type": "string",
+          "description": "State directory path",
+          "default": "~/.openclaw/extensions/task-monitor/state"
+        },
+        "tasksDir": {
+          "type": "string",
+          "description": "Tasks directory path",
+          "default": "~/.openclaw/workspace/memory/tasks"
+        }
+      }
+    },
+    "logging": {
+      "type": "object",
+      "description": "Logging parameters",
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["debug", "info", "warn", "error"],
+          "default": "info"
+        }
+      }
+    }
+  }
+}

@@ -3,11 +3,11 @@
   "version": "1.0.0",
   
   "monitoring": {
-    "subtaskTimeout": 1800000,
-    "taskChainTimeout": 2700000,
+    "subtaskTimeout": 600000,
+    "taskChainTimeout": 900000,
     "stalledPendingThreshold": 1800000,
     "stalledRunningThreshold": 600000,
-    "mainTaskTimeout": 7200000
+    "mainTaskTimeout": 3600000
   },
   
   "retry": {

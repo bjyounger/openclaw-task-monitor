@@ -21,3 +21,6 @@ export type {
   SubtaskStatus,
   TaskChainFile,
 } from './task-chain';
+
+export { loadConfig, getDefaultConfig } from './config-loader';
+export type { TaskMonitorConfig } from './config-loader';

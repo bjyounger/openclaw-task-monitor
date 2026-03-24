@@ -4,7 +4,15 @@ import * as path from "path";
 import * as fs from "fs";
 import { spawn } from "child_process";
 import * as readline from "readline";
-import { StateManager, AlertManager, TaskChainManager, type TaskState, type ScheduledRetry } from "./lib";
+import { 
+  StateManager, 
+  AlertManager, 
+  TaskChainManager, 
+  loadConfig,
+  type TaskState, 
+  type ScheduledRetry,
+  type TaskMonitorConfig,
+} from "./lib";
 
 // ==================== Session Key 辅助函数 ====================
 
@@ -45,11 +53,11 @@ function parseAgentSessionKey(sessionKey: string): { agentId: string; rest: stri
   return { agentId: match[1], rest: match[2] };
 }
 
-const TASKS_DIR = path.join(process.env.HOME || "/root", ".openclaw/workspace/memory/tasks");
-const STATE_DIR = path.join(process.env.HOME || "/root", ".openclaw/extensions/task-monitor/state");
-const CONFIG_PATH = path.join(__dirname, "config.json");
+// ==================== 子任务反馈流配置 ====================
 
-// 子任务反馈配置
+/**
+ * 子任务反馈流配置（独立于主配置）
+ */
 interface StreamFilter {
   toolCalls?: boolean;
   thinking?: boolean;
@@ -65,8 +73,8 @@ interface StreamConfig {
   showTimestamp: boolean;
 }
 
-// 默认配置
-const defaultConfig: StreamConfig = {
+// 默认反馈流配置
+const defaultStreamConfig: StreamConfig = {
   streamToParent: true,
   streamFilter: {
     toolCalls: true,
@@ -78,20 +86,6 @@ const defaultConfig: StreamConfig = {
   maxMessageLength: 200,
   showTimestamp: false,
 };
-
-// 加载配置
-function loadConfig(): StreamConfig {
-  try {
-    if (fs.existsSync(CONFIG_PATH)) {
-      const configData = fs.readFileSync(CONFIG_PATH, "utf-8");
-      const config = JSON.parse(configData);
-      return { ...defaultConfig, ...config };
-    }
-  } catch (e) {
-    console.error("[task-monitor] Failed to load config, using defaults:", e);
-  }
-  return defaultConfig;
-}
 
 // ==================== Transcript 监听辅助函数 ====================
 
@@ -334,7 +328,8 @@ interface SubagentEndedPayload {
 async function executeRetrySafely(
   runId: string,
   agentId: string,
-  taskDescription: string
+  taskDescription: string,
+  spawnTimeout: number
 ): Promise<{ pid: number; runId: string; startTime: number }> {
   return new Promise((resolve, reject) => {
     // 使用数组参数，避免 shell 解析
@@ -346,7 +341,7 @@ async function executeRetrySafely(
     const child = spawn("claude", args, {
       detached: false,
       stdio: "ignore",
-      timeout: 300000, // 5 分钟超时
+      timeout: spawnTimeout,
     });
 
     const startTime = Date.now();
@@ -399,17 +394,26 @@ async function sendNotification(alertType: string, message: string): Promise<voi
 const plugin = {
   id: "task-monitor",
   name: "Task Monitor",
-  description: "监控子任务生命周期、自动重试、任务链追踪、进度报告、主任务监控、停滞检测、超时检测（v9.1）",
+  description: "监控子任务生命周期、自动重试、任务链追踪、进度报告、主任务监控、停滞检测、超时检测（v11 - 配置化）",
   configSchema: emptyPluginConfigSchema(),
 
   register(api: OpenClawPluginApi) {
-    console.log("[task-monitor] Plugin registering (v9 with main task monitoring)...");
-    api.logger.info?.("[task-monitor] Plugin registering (v9 with main task monitoring)...");
+    // ==================== 加载配置 ====================
+    const config = loadConfig();
+    console.log(`[task-monitor] Plugin registering (v11, config version: ${config.version})...`);
+    api.logger.info?.(`[task-monitor] Plugin registering (v11, config version: ${config.version})...`);
+
+    // 从配置中提取常用路径
+    const TASKS_DIR = config.storage.tasksDir;
+    const STATE_DIR = config.storage.stateDir;
 
     // 初始化状态管理器
     stateManager = new StateManager(STATE_DIR);
     alertManager = new AlertManager(
-      { channel: "wecom", target: "wecom-agent:YangKe" },
+      { 
+        channel: config.notification.channel, 
+        target: config.notification.target 
+      },
       path.join(STATE_DIR, "alert-records.json")
     );
     taskChainManager = new TaskChainManager(STATE_DIR);
@@ -417,7 +421,7 @@ const plugin = {
     // ==================== 进度报告定时器存储 ====================
     const progressReporters = new Map<string, NodeJS.Timeout>();
 
-    // ==================== 定时器 1: 超时检查 + 主任务完成检测 (每分钟) ====================
+    // ==================== 定时器 1: 超时检查 + 主任务完成检测 ====================
     const timeoutChecker = setInterval(async () => {
       if (!stateManager || !taskChainManager) return;
       try {
@@ -486,8 +490,8 @@ const plugin = {
                 }
               }
               // ==================== 停滞任务检测 ====================
-              else if ((content.includes("**状态**: pending") || content.includes("状态: pending")) && elapsed > 1800) {
-                // pending 状态超过 30 分钟
+              else if ((content.includes("**状态**: pending") || content.includes("状态: pending")) && elapsed > config.monitoring.stalledPendingThreshold / 1000) {
+                // pending 状态超过阈值
                 const taskName = file.replace(".md", "");
                 await alertManager?.sendAlert(
                   `stalled_pending_${taskName}`,
@@ -497,8 +501,8 @@ const plugin = {
                 api.logger.warn?.(`[task-monitor] Stalled task detected (pending): ${file}`);
               }
               // ==================== 任务状态一致性检测 ====================
-              else if ((content.includes("**状态**: running") || content.includes("状态: running")) && elapsed > 600) {
-                // running 状态超过 10 分钟，检查是否有对应的子任务
+              else if ((content.includes("**状态**: running") || content.includes("状态: running")) && elapsed > config.monitoring.stalledRunningThreshold / 1000) {
+                // running 状态超过阈值，检查是否有对应的子任务
                 const taskName = file.replace(".md", "");
                 
                 // 检查状态管理器中是否有对应的活跃任务
@@ -519,9 +523,9 @@ const plugin = {
                   api.logger.warn?.(`[task-monitor] Stalled task detected (running, no subagent): ${file}`);
                 }
               }
-              // ==================== 主任务超时检测 (v8 新增) ====================
-              // pending 状态超过 60 分钟视为超时（独立检测，不受停滞检测影响）
-              if ((content.includes("**状态**: pending") || content.includes("状态: pending")) && elapsed > 3600) {
+              // ==================== 主任务超时检测 ====================
+              // pending 状态超时（独立检测，不受停滞检测影响）
+              if ((content.includes("**状态**: pending") || content.includes("状态: pending")) && elapsed > config.monitoring.mainTaskTimeout / 1000) {
                 const taskName = file.replace(".md", "");
                 await alertManager?.sendAlert(
                   `main_task_timeout_${taskName}`,
@@ -530,8 +534,8 @@ const plugin = {
                 );
                 api.logger.warn?.(`[task-monitor] Main task timeout (pending): ${file}`);
               }
-              // running 状态超过 60 分钟视为超时
-              if ((content.includes("**状态**: running") || content.includes("状态: running")) && elapsed > 3600) {
+              // running 状态超时
+              if ((content.includes("**状态**: running") || content.includes("状态: running")) && elapsed > config.monitoring.mainTaskTimeout / 1000) {
                 const taskName = file.replace(".md", "");
                 await alertManager?.sendAlert(
                   `main_task_timeout_${taskName}`,
@@ -548,9 +552,9 @@ const plugin = {
       } catch (e) {
         api.logger.error?.(`[task-monitor] Timeout check error: ${e}`);
       }
-    }, 60000);
+    }, config.progress.timeoutCheckInterval);
 
-    // ==================== 定时器 2: 重试调度检查 (每 10 秒) ====================
+    // ==================== 定时器 2: 重试调度检查 ====================
     const retryChecker = setInterval(async () => {
       if (!stateManager) return;
       try {
@@ -579,7 +583,7 @@ const plugin = {
             const agentId = task.metadata?.agentId as string;
             const taskDescription = task.metadata?.taskDescription as string || task.metadata?.label as string || "retry task";
 
-            await executeRetrySafely(retry.runId, agentId, taskDescription);
+            await executeRetrySafely(retry.runId, agentId, taskDescription, config.retry.spawnTimeout);
             api.logger.info?.(`[task-monitor] Retry spawned successfully: ${retry.runId}`);
           } catch (e) {
             api.logger.error?.(`[task-monitor] Failed to spawn retry: ${e}`);
@@ -601,11 +605,23 @@ const plugin = {
       } catch (e) {
         api.logger.error?.(`[task-monitor] Retry check error: ${e}`);
       }
-    }, 10000); // 每 10 秒检查一次
+    }, config.retry.checkInterval);
 
-    // ==================== 加载配置 ====================
-    const streamConfig = loadConfig();
-    api.logger.info?.(`[task-monitor] Stream config loaded: ${JSON.stringify(streamConfig)}`);
+    // ==================== 子任务反馈流配置 ====================
+    // 使用主配置中的通知参数作为基础
+    const streamConfig: StreamConfig = {
+      streamToParent: true,
+      streamFilter: {
+        toolCalls: true,
+        thinking: false,
+        errors: true,
+        progress: true,
+      },
+      throttle: config.notification.throttle,
+      maxMessageLength: config.notification.maxMessageLength,
+      showTimestamp: false,
+    };
+    api.logger.info?.(`[task-monitor] Stream config initialized: throttle=${streamConfig.throttle}ms, maxLen=${streamConfig.maxMessageLength}`);
 
     // 节流控制：避免频繁发送消息
     const lastSentMap = new Map<string, number>();
@@ -621,7 +637,8 @@ const plugin = {
           const phase = (evt.data as any)?.phase;
           
           // 处理 turn_started 事件（主任务开始 - 检查任务记录）
-          if (phase === "turn_started") {
+          // OpenClaw 发送 phase: "start"，不是 "turn_started"
+          if (phase === "start" || phase === "turn_started") {
             // 排除子任务
             if (evt.sessionKey && !evt.sessionKey.includes(":subagent:")) {
               api.logger.info?.(`[task-monitor] Main task turn started: ${evt.sessionKey}`);
@@ -674,8 +691,8 @@ const plugin = {
             }
           }
           
-          // 处理 turn_ended 事件（主任务完成检测）
-          if (phase === "turn_ended") {
+          // 处理 end 事件（主任务完成检测）
+          if (phase === "end") {
             // 排除子任务
             if (evt.sessionKey && !evt.sessionKey.includes(":subagent:")) {
               api.logger.info?.(`[task-monitor] Main task turn ended: ${evt.sessionKey}`);
@@ -941,7 +958,7 @@ const plugin = {
           id: data.runId,
           type: "sub",
           status: "running",
-          timeoutMs: 600000, // 默认 10 分钟超时
+          timeoutMs: config.monitoring.subtaskTimeout,
           parentTaskId: null,
           metadata: {
             label: data.label,
@@ -956,30 +973,32 @@ const plugin = {
         api.logger.info?.(`[task-monitor] Task registered: ${task.id}`);
 
         // ==================== 启动进度报告定时器 ====================
-        const taskLabel = data.label || data.taskDescription || data.runId;
-        const progressTimer = setInterval(async () => {
-          try {
-            const currentTask = await stateManager?.getTask(data.runId);
-            if (!currentTask) {
-              // 任务不存在，停止定时器
-              clearInterval(progressTimer);
-              progressReporters.delete(data.runId);
-              return;
+        if (config.progress.enabled) {
+          const taskLabel = data.label || data.taskDescription || data.runId;
+          const progressTimer = setInterval(async () => {
+            try {
+              const currentTask = await stateManager?.getTask(data.runId);
+              if (!currentTask) {
+                // 任务不存在，停止定时器
+                clearInterval(progressTimer);
+                progressReporters.delete(data.runId);
+                return;
+              }
+
+              const runtime = Math.floor((Date.now() - currentTask.startTime) / 60000);
+              await alertManager?.sendAlert(
+                `progress_${data.runId}`,
+                `⏳ 子任务执行中\n\n任务: ${taskLabel}\n运行时间: ${runtime} 分钟\n状态: ${currentTask.status}`,
+                "progress"
+              );
+            } catch (e) {
+              api.logger.error?.(`[task-monitor] Progress report error: ${e}`);
             }
+          }, config.progress.reportInterval);
 
-            const runtime = Math.floor((Date.now() - currentTask.startTime) / 60000);
-            await alertManager?.sendAlert(
-              `progress_${data.runId}`,
-              `⏳ 子任务执行中\n\n任务: ${taskLabel}\n运行时间: ${runtime} 分钟\n状态: ${currentTask.status}`,
-              "progress"
-            );
-          } catch (e) {
-            api.logger.error?.(`[task-monitor] Progress report error: ${e}`);
-          }
-        }, 60000); // 每分钟报告
-
-        progressReporters.set(data.runId, progressTimer);
-        api.logger.info?.(`[task-monitor] Progress reporter started for: ${data.runId}`);
+          progressReporters.set(data.runId, progressTimer);
+          api.logger.info?.(`[task-monitor] Progress reporter started for: ${data.runId}`);
+        }
       } catch (e) {
         api.logger.error?.(`[task-monitor] Error in subagent_spawned hook: ${e}`);
       }
@@ -1115,7 +1134,7 @@ const plugin = {
     process.on("SIGTERM", cleanup);
     process.on("SIGINT", cleanup);
 
-    api.logger.info?.("[task-monitor] Plugin registration complete (v10)");
+    api.logger.info?.("[task-monitor] Plugin registration complete (v11)");
   },
 };
 
