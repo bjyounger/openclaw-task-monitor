@@ -828,7 +828,7 @@
     {
       "id": "667a6abd-aa4f-4daa-9c44-ba17ce4d4ab2",
       "type": "sub",
-      "status": "running",
+      "status": "timeout",
       "timeoutMs": 600000,
       "parentTaskId": null,
       "metadata": {
@@ -840,12 +840,20 @@
         "isMainTask": false
       },
       "startTime": 1774338813872,
-      "lastHeartbeat": 1774338813872,
-      "retryCount": 0,
+      "lastHeartbeat": 1774339116550,
+      "retryCount": 1,
       "maxRetries": 2,
-      "retryHistory": []
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774339084793,
+          "outcome": "timeout",
+          "duration": 270921
+        }
+      ],
+      "lastRetryTime": 1774339084796
     }
   ],
   "version": "2.0.0",
-  "lastUpdated": 1774338813872
+  "lastUpdated": 1774339116550
 }

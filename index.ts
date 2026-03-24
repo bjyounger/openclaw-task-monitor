@@ -626,26 +626,51 @@ const plugin = {
             if (evt.sessionKey && !evt.sessionKey.includes(":subagent:")) {
               api.logger.info?.(`[task-monitor] Main task turn started: ${evt.sessionKey}`);
               
-              // 5分钟后检查是否有任务记录
-              setTimeout(async () => {
+              // v10: 自动创建任务记录
+              try {
                 const runningDir = path.join(TASKS_DIR, "running");
-                if (fs.existsSync(runningDir)) {
-                  const taskFiles = fs.readdirSync(runningDir).filter(f => f.endsWith(".md"));
-                  // 检查是否有包含当前 sessionKey 的任务记录
-                  const hasRecord = taskFiles.some(f => {
-                    const content = fs.readFileSync(path.join(runningDir, f), "utf-8");
-                    return content.includes(evt.sessionKey) || content.includes(evt.runId || "");
-                  });
-                  
-                  if (!hasRecord && taskFiles.length === 0) {
-                    await alertManager?.sendAlert(
-                      `no_task_record_${evt.sessionKey?.slice(-8)}`,
-                      `⚠️ 主任务未创建任务记录\n\nSession: ${evt.sessionKey}\n提示: 请在 memory/tasks/running/ 目录创建任务记录文件`,
-                      "no_task_record"
-                    );
-                  }
+                
+                // 确保 running 目录存在
+                if (!fs.existsSync(runningDir)) {
+                  fs.mkdirSync(runningDir, { recursive: true });
                 }
-              }, 5 * 60 * 1000); // 5分钟后检查
+                
+                // 检查是否已有该 sessionKey 的任务记录
+                const taskFiles = fs.readdirSync(runningDir).filter(f => f.endsWith(".md"));
+                const hasRecord = taskFiles.some(f => {
+                  const content = fs.readFileSync(path.join(runningDir, f), "utf-8");
+                  return content.includes(evt.sessionKey!);
+                });
+                
+                // 如果没有记录，自动创建
+                if (!hasRecord) {
+                  const sessionShort = evt.sessionKey.split(":").pop() || evt.sessionKey.slice(-8);
+                  const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+                  const taskFileName = `main-${sessionShort}-${timestamp}.md`;
+                  const taskFilePath = path.join(runningDir, taskFileName);
+                  
+                  const taskContent = `# 任务记录
+
+**SessionKey**: ${evt.sessionKey}
+**RunId**: ${evt.runId || "N/A"}
+**创建时间**: ${new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })}
+**状态**: running
+
+## 任务描述
+
+（待填写）
+
+## 执行日志
+
+- ${new Date().toLocaleTimeString("zh-CN", { timeZone: "Asia/Shanghai", hour: "2-digit", minute: "2-digit" })} 任务开始
+`;
+                  
+                  fs.writeFileSync(taskFilePath, taskContent, "utf-8");
+                  api.logger.info?.(`[task-monitor] Auto-created task record: ${taskFileName}`);
+                }
+              } catch (error) {
+                api.logger.error?.(`[task-monitor] Failed to create task record: ${error}`);
+              }
             }
           }
           
@@ -655,7 +680,43 @@ const plugin = {
             if (evt.sessionKey && !evt.sessionKey.includes(":subagent:")) {
               api.logger.info?.(`[task-monitor] Main task turn ended: ${evt.sessionKey}`);
               
-              // 发送通知
+              // v10: 自动更新任务状态为 completed
+              try {
+                const runningDir = path.join(TASKS_DIR, "running");
+                if (fs.existsSync(runningDir)) {
+                  const taskFiles = fs.readdirSync(runningDir).filter(f => f.endsWith(".md"));
+                  
+                  // 查找包含该 sessionKey 的任务记录
+                  for (const file of taskFiles) {
+                    const filePath = path.join(runningDir, file);
+                    let content = fs.readFileSync(filePath, "utf-8");
+                    
+                    if (content.includes(evt.sessionKey!) && content.includes("**状态**: running")) {
+                      // 更新状态为 completed
+                      content = content.replace("**状态**: running", "**状态**: completed");
+                      
+                      // 添加完成日志
+                      const completedTime = new Date().toLocaleTimeString("zh-CN", { timeZone: "Asia/Shanghai", hour: "2-digit", minute: "2-digit" });
+                      const logLine = `- ${completedTime} 任务完成\n`;
+                      
+                      // 在执行日志部分添加完成记录
+                      if (content.includes("## 执行日志")) {
+                        content = content.replace("## 执行日志\n", `## 执行日志\n${logLine}`);
+                      } else {
+                        content += `\n## 执行日志\n${logLine}`;
+                      }
+                      
+                      fs.writeFileSync(filePath, content, "utf-8");
+                      api.logger.info?.(`[task-monitor] Updated task status to completed: ${file}`);
+                      break;
+                    }
+                  }
+                }
+              } catch (error) {
+                api.logger.error?.(`[task-monitor] Failed to update task status: ${error}`);
+              }
+              
+              // 发送完成通知
               await alertManager?.sendAlert(
                 `main_turn_${evt.runId || Date.now()}`,
                 `✅ 主任务对话完成\n\nSession: ${evt.sessionKey}\n时间: ${new Date().toLocaleString("zh-CN")}`,
@@ -1054,7 +1115,7 @@ const plugin = {
     process.on("SIGTERM", cleanup);
     process.on("SIGINT", cleanup);
 
-    api.logger.info?.("[task-monitor] Plugin registration complete (v9.2)");
+    api.logger.info?.("[task-monitor] Plugin registration complete (v10)");
   },
 };
 
