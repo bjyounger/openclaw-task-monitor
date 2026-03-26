@@ -396,3 +396,38 @@ cd ~/.openclaw/extensions
 wget https://github.com/bjyounger/openclaw-task-monitor/releases/latest/download/task-monitor.tgz
 tar -xzf task-monitor.tgz
 ```
+
+---
+
+## Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| **v12.0.0** | 2026-03-26 | Config injection, pre-compiled packaging, OpenClaw 3.22 compat |
+| v11.0.0 | 2026-03-24 | Auto task record, main task monitoring |
+| v10.0.0 | 2026-03-23 | Task chain tracking, timeout detection |
+| v9.0.0 | 2026-03-22 | Message queue for notifications |
+| v8.0.0 | 2026-03-21 | Auto-retry mechanism v3 |
+
+---
+
+## Changelog
+
+### v12.0.0 (2026-03-26)
+
+**New Features**:
+- Config injection for workspace templates
+- Pre-compiled packaging support
+- Message queue for notifications
+- OpenClaw 3.22 compatibility
+
+**Breaking Changes**:
+- `openclaw` is now a peerDependency (must be installed in OpenClaw environment)
+
+**Installation**:
+```bash
+# Pre-compiled (recommended)
+wget https://github.com/bjyounger/openclaw-task-monitor/releases/download/v12.0.0/task-monitor-12.0.0.tgz
+tar -xzf task-monitor-12.0.0.tgz
+mv task-monitor-12.0.0 ~/.openclaw/extensions/task-monitor
+```
