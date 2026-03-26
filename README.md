@@ -7,10 +7,66 @@ Task monitoring plugin for OpenClaw with automatic retry mechanism and task chai
 - **Task State Management**: Track task lifecycle (pending, running, completed, failed, timeout, etc.)
 - **Task Chain Tracking**: Track hierarchical task chains (main task → subtasks)
 - **Auto-Retry**: Automatically retry failed/timeout tasks (up to 2 times by default)
+- **Message Queue**: Cache failed notifications and retry on connection recovery
 - **Persistent Scheduling**: Retry schedules survive plugin restarts
 - **Safe Execution**: Uses `spawn` with array parameters to prevent command injection
 - **Watchdog**: Cron-based fallback to ensure retries execute even if plugin restarts
 - **Notifications**: Send retry alerts and final failure notifications via WeCom
+
+## Message Queue (v12)
+
+### Overview
+
+When Bot WebSocket disconnects, notifications fail to send. The message queue caches failed messages and automatically sends them when connection recovers.
+
+### Configuration
+
+Add to `config.json`:
+
+```json
+{
+  "messageQueue": {
+    "maxQueueSize": 100,      // Maximum queue length
+    "maxRetries": 3,          // Maximum retry attempts per message
+    "retryInterval": 5000     // Retry interval in milliseconds
+  }
+}
+```
+
+### How It Works
+
+1. **Message Enqueue**: When `sendNotification` fails, message is added to queue
+2. **Auto Retry**: Queue is flushed every 30 seconds
+3. **Connection Recovery**: When Bot WS reconnects, queue is automatically flushed
+4. **Retry Limit**: Messages exceeding max retries are dropped
+
+### Logs
+
+- `[task-monitor] Message queued, queue size: X` - Message added to queue
+- `[task-monitor] Flushing message queue, count: X` - Starting to send queued messages
+- `[task-monitor] Queued message sent successfully: msg-xxx` - Message sent successfully
+- `[task-monitor] Message send failed after X retries, dropped: msg-xxx` - Message dropped
+
+### API
+
+```typescript
+import { messageQueue } from './lib';
+
+// Enqueue a message
+messageQueue.enqueue(taskId, message, alertType);
+
+// Get queue size
+const size = messageQueue.size();
+
+// Get queue status
+const status = messageQueue.getStatus();
+
+// Manually flush queue
+await messageQueue.flushQueue();
+
+// Set connection status
+messageQueue.setConnectionStatus(true);
+```
 
 ## Task Chain Tracking (v4)
 

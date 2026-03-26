@@ -872,8 +872,224 @@
       "retryCount": 0,
       "maxRetries": 2,
       "retryHistory": []
+    },
+    {
+      "id": "88629cb1-98f0-4d3d-905c-07302389615e",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "openclaw-3.22-api-analysis",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:7c0f1f26-589d-4700-8429-f32f0afbb93a",
+        "taskDescription": "openclaw-3.22-api-analysis",
+        "isMainTask": false
+      },
+      "startTime": 1774354312226,
+      "lastHeartbeat": 1774354312226,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774354562675,
+          "outcome": "ok",
+          "duration": 250449
+        }
+      ]
+    },
+    {
+      "id": "2c7e7ce1-916b-46ab-8ec5-cd47cbcc1ee7",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "task-monitor-msg-queue",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:06bedb4d-c298-4727-9916-0b66502c6f15",
+        "taskDescription": "task-monitor-msg-queue",
+        "isMainTask": false
+      },
+      "startTime": 1774362968776,
+      "lastHeartbeat": 1774362968776,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774363542801,
+          "outcome": "ok",
+          "duration": 574025
+        }
+      ]
+    },
+    {
+      "id": "f64bbf9f-01cc-4c98-8a3b-e2b1cc042a3b",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "ptmobile-phase1",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:00c04ce3-87c1-46ac-8119-49a7500c626b",
+        "taskDescription": "ptmobile-phase1",
+        "isMainTask": false
+      },
+      "startTime": 1774481322560,
+      "lastHeartbeat": 1774481322560,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774481730152,
+          "outcome": "ok",
+          "duration": 407592
+        }
+      ]
+    },
+    {
+      "id": "3f5f2394-1dc8-407f-88bd-b3b8f3971454",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "ptmobile-phase2-api",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:93f14037-b25b-4d48-94d7-b1c6a4a89032",
+        "taskDescription": "ptmobile-phase2-api",
+        "isMainTask": false
+      },
+      "startTime": 1774481781953,
+      "lastHeartbeat": 1774481781953,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774482205781,
+          "outcome": "ok",
+          "duration": 423828
+        }
+      ]
+    },
+    {
+      "id": "bad84abf-b81d-4405-8e26-ec906239e8b4",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "ptmobile-phase3-components",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:6f2454ee-e199-4b62-aab8-2c3dbb4bffa9",
+        "taskDescription": "ptmobile-phase3-components",
+        "isMainTask": false
+      },
+      "startTime": 1774482195044,
+      "lastHeartbeat": 1774482195044,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774482433733,
+          "outcome": "ok",
+          "duration": 238689
+        }
+      ]
+    },
+    {
+      "id": "1533c651-091a-4c87-8b04-d31d8d120778",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "ptmobile-phase4-5",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:db12b441-4588-4cb5-be36-65ab8f282214",
+        "taskDescription": "ptmobile-phase4-5",
+        "isMainTask": false
+      },
+      "startTime": 1774482424464,
+      "lastHeartbeat": 1774482424464,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774483379265,
+          "outcome": "ok",
+          "duration": 954801
+        }
+      ]
+    },
+    {
+      "id": "7ee2b37a-f17f-483a-b971-13b995191ca8",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "ptmobile-swiper-picker",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:5ce90f61-8f54-4ba0-9257-c64725c6e1a6",
+        "taskDescription": "ptmobile-swiper-picker",
+        "isMainTask": false
+      },
+      "startTime": 1774486779893,
+      "lastHeartbeat": 1774486779893,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774487331802,
+          "outcome": "ok",
+          "duration": 551909
+        }
+      ]
+    },
+    {
+      "id": "436ee6ac-dfc2-4059-b915-ca7e77eb0b74",
+      "type": "sub",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": null,
+      "metadata": {
+        "label": "ptmobile-picker-continue",
+        "agentId": "main",
+        "mode": "run",
+        "childSessionKey": "agent:main:subagent:41e7fff1-d306-4027-8506-465c0c05809c",
+        "taskDescription": "ptmobile-picker-continue",
+        "isMainTask": false
+      },
+      "startTime": 1774487317339,
+      "lastHeartbeat": 1774487317339,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774487968354,
+          "outcome": "ok",
+          "duration": 651015
+        }
+      ]
     }
   ],
   "version": "2.0.0",
-  "lastUpdated": 1774348613004
+  "lastUpdated": 1774487968354
 }

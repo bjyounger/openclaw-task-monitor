@@ -48,6 +48,12 @@
     }
   },
   
+  "messageQueue": {
+    "maxQueueSize": 100,
+    "maxRetries": 3,
+    "retryInterval": 5000
+  },
+  
   "storage": {
     "stateDir": "~/.openclaw/extensions/task-monitor/state",
     "tasksDir": "~/.openclaw/workspace/memory/tasks"

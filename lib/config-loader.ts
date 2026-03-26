@@ -45,6 +45,11 @@ export interface TaskMonitorConfig {
       [key: string]: boolean;
     };
   };
+  messageQueue: {
+    maxQueueSize: number;
+    maxRetries: number;
+    retryInterval: number;
+  };
   storage: {
     stateDir: string;
     tasksDir: string;
@@ -103,6 +108,12 @@ const DEFAULT_CONFIG: TaskMonitorConfig = {
       progress: true,
       retry: true,
     },
+  },
+  
+  messageQueue: {
+    maxQueueSize: 100,
+    maxRetries: 3,
+    retryInterval: 5000,               // 5 秒
   },
   
   storage: {

@@ -9,6 +9,7 @@ import {
   AlertManager, 
   TaskChainManager, 
   loadConfig,
+  messageQueue,
   type TaskState, 
   type ScheduledRetry,
   type TaskMonitorConfig,
@@ -377,6 +378,7 @@ async function executeRetrySafely(
 
 /**
  * 发送通知（通过 AlertManager，支持去重和冷却期）
+ * 如果发送失败，将消息加入队列等待重试
  */
 async function sendNotification(alertType: string, message: string): Promise<void> {
   if (!alertManager) {
@@ -385,9 +387,16 @@ async function sendNotification(alertType: string, message: string): Promise<voi
   }
   
   try {
-    await alertManager.sendAlert(alertType, message, alertType);
+    const sent = await alertManager.sendAlert(alertType, message, alertType);
+    if (!sent) {
+      // 发送失败，加入消息队列
+      console.warn("[task-monitor] Alert send returned false, queuing message");
+      messageQueue.enqueue(alertType, message, alertType);
+    }
   } catch (e) {
     console.error("[task-monitor] Failed to send notification:", e);
+    // 异常时也加入队列
+    messageQueue.enqueue(alertType, message, alertType);
   }
 }
 
@@ -417,6 +426,24 @@ const plugin = {
       path.join(STATE_DIR, "alert-records.json")
     );
     taskChainManager = new TaskChainManager(STATE_DIR);
+
+    // 初始化消息队列
+    messageQueue.setAlertManager(alertManager);
+    // 应用配置
+    if (config.messageQueue) {
+      // MessageQueue 已经是单例，配置在构造时已设置
+      // 这里可以添加动态配置更新逻辑
+      api.logger.info?.(`[task-monitor] Message queue config: maxQueueSize=${config.messageQueue.maxQueueSize}, maxRetries=${config.messageQueue.maxRetries}`);
+    }
+    api.logger.info?.("[task-monitor] Message queue initialized");
+
+    // ==================== 消息队列定时器：定期清空队列 ====================
+    const queueFlushTimer = setInterval(async () => {
+      if (messageQueue.size() > 0) {
+        api.logger.debug?.(`[task-monitor] Auto-flushing message queue, size: ${messageQueue.size()}`);
+        await messageQueue.flushQueue();
+      }
+    }, 30000); // 每 30 秒尝试一次
 
     // ==================== 进度报告定时器存储 ====================
     const progressReporters = new Map<string, NodeJS.Timeout>();
@@ -1123,6 +1150,7 @@ const plugin = {
     const cleanup = () => {
       clearInterval(timeoutChecker);
       clearInterval(retryChecker);
+      clearInterval(queueFlushTimer);
       // 清理所有进度报告定时器
       for (const [runId, timer] of progressReporters) {
         clearInterval(timer);
