@@ -1,7 +1,7 @@
 {
   "name": "task-monitor",
-  "version": "2.0.0",
-  "description": "监控子任务生命周期并自动重试（v3）",
+  "version": "12.0.0",
+  "description": "监控子任务生命周期并自动重试（v12）",
   "main": "index.ts",
   "scripts": {
     "test": "ts-node scripts/test-retry.ts",
