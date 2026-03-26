@@ -1,0 +1,46 @@
+{
+  "version": "1.0.0",
+  "injectables": [
+    {
+      "id": "agents-verification",
+      "source": "workspace-templates/AGENTS.md.template",
+      "target": "AGENTS.md",
+      "mode": "merge",
+      "section": "验证铁律（Verification Iron Law）",
+      "required": true,
+      "description": "验证铁律：证据先于断言，防止假完成"
+    },
+    {
+      "id": "agents-debugging",
+      "source": "workspace-templates/AGENTS.md.template",
+      "target": "AGENTS.md",
+      "mode": "merge",
+      "section": "系统化调试（Systematic Debugging）",
+      "required": true,
+      "description": "系统化调试：禁止无根因分析就修复问题"
+    },
+    {
+      "id": "agents-planning",
+      "source": "workspace-templates/AGENTS.md.template",
+      "target": "AGENTS.md",
+      "mode": "merge",
+      "section": "强制规划流程（Superpowers 整合）",
+      "required": true,
+      "description": "强制规划流程：禁止跳过规划直接编码"
+    },
+    {
+      "id": "heartbeat-debugging",
+      "source": "workspace-templates/HEARTBEAT.md.template",
+      "target": "HEARTBEAT.md",
+      "mode": "merge",
+      "section": "系统化调试流程（遇到问题时执行）",
+      "required": true,
+      "description": "调试四阶段流程 + 调试记录模板"
+    }
+  ],
+  "onInstall": "prompt",
+  "onUpdate": "prompt",
+  "backupEnabled": true,
+  "backupDir": "backups",
+  "timestampFormat": "YYYY-MM-DD-HHmmss"
+}
