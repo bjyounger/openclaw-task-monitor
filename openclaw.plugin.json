@@ -1,14 +1,38 @@
 {
   "id": "task-monitor",
   "name": "Task Monitor",
-  "version": "1.0.0",
-  "description": "监控子任务生命周期并自动报告",
+  "version": "12.1.0",
+  "description": "监控子任务生命周期、自动重试、任务链追踪、进度报告、主任务监控、停滞检测、超时检测、exec进程监控、失败实时上报、系统健康保障",
   "openclaw": {
     "extensions": ["./index.ts"]
   },
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
-    "properties": {}
+    "properties": {
+      "monitoring": {
+        "type": "object",
+        "properties": {
+          "subtaskTimeout": { "type": "number", "default": 1800000 },
+          "mainTaskTimeout": { "type": "number", "default": 86400000 },
+          "stalledThreshold": { "type": "number", "default": 1800000 }
+        }
+      },
+      "retry": {
+        "type": "object",
+        "properties": {
+          "maxRetries": { "type": "number", "default": 2 },
+          "retryDelayMs": { "type": "number", "default": 60000 }
+        }
+      },
+      "maintenance": {
+        "type": "object",
+        "properties": {
+          "sessionRetentionDays": { "type": "number", "default": 30 },
+          "configBackupIntervalHours": { "type": "number", "default": 1 },
+          "healthCheckEnabled": { "type": "boolean", "default": true }
+        }
+      }
+    }
   }
 }
