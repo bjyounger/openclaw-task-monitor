@@ -32,6 +32,16 @@
           "configBackupIntervalHours": { "type": "number", "default": 1 },
           "healthCheckEnabled": { "type": "boolean", "default": true }
         }
+      },
+      "notification": {
+        "type": "object",
+        "properties": {
+          "channel": { "type": "string", "description": "通知渠道，如 wecom、telegram" },
+          "target": { "type": "string", "description": "通知目标，如 wecom:YangKe" },
+          "throttle": { "type": "number", "default": 1000, "description": "消息节流间隔(ms)" },
+          "maxMessageLength": { "type": "number", "default": 4096, "description": "消息最大长度" }
+        },
+        "required": ["channel", "target"]
       }
     }
   }
