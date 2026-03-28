@@ -2552,20 +2552,1227 @@
     {
       "id": "call_c7012cc7688d47fa95be6479",
       "type": "exec",
-      "status": "running",
+      "status": "completed",
       "timeoutMs": 10,
       "parentTaskId": "ffb6bdb2-eb08-469d-8ef6-c3036ced2db2",
       "metadata": {
         "command": "cd /root/.openclaw/extensions/task-monitor && \\\ngit add -A && \\\ngit commit -m \"docs: v12.1 - 整合维护脚本，移除重复文件\n\n改进：\n1. 移除 workspace/scripts/ 下重复的脚本\n2. 整合到 task-monitor/scripts/maintenance.sh\n3. 清晰划分：插件相关 vs 独立工具\n\n版本: v12.1.0\n日期: 2026-03-28\"",
-        "toolName": "exec"
+        "duration": 35
       },
       "startTime": 1774682834595,
       "lastHeartbeat": 1774682834595,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774682834634,
+          "outcome": "ok",
+          "duration": 39
+        }
+      ]
+    },
+    {
+      "id": "call_03c674206d784f78a916392e",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "cc8a85d1-73d9-446b-9e7e-c8f65cf44a98",
+      "metadata": {
+        "command": "openclaw gateway status 2>&1",
+        "duration": 5728
+      },
+      "startTime": 1774682906084,
+      "lastHeartbeat": 1774682906084,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774682911814,
+          "outcome": "ok",
+          "duration": 5730
+        }
+      ]
+    },
+    {
+      "id": "call_e98971c634d948a3b9e4b2a2",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "cc8a85d1-73d9-446b-9e7e-c8f65cf44a98",
+      "metadata": {
+        "command": "journalctl --user -u openclaw-gateway --since \"1 hour ago\" --no-pager | tail -100",
+        "duration": 5737
+      },
+      "startTime": 1774682906134,
+      "lastHeartbeat": 1774682906134,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774682911825,
+          "outcome": "ok",
+          "duration": 5691
+        }
+      ]
+    },
+    {
+      "id": "call_2af1cd5f3b794fec90865aac",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 60,
+      "parentTaskId": "cc8a85d1-73d9-446b-9e7e-c8f65cf44a98",
+      "metadata": {
+        "command": "openclaw doctor --repair 2>&1 | tail -30",
+        "duration": 10038
+      },
+      "startTime": 1774682920489,
+      "lastHeartbeat": 1774682920489,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774682930531,
+          "outcome": "ok",
+          "duration": 10042
+        }
+      ]
+    },
+    {
+      "id": "call_e655a8acfea64d3587c1c0f0",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "bf8ee520-dd75-411d-acad-72426e85b4c8",
+      "metadata": {
+        "command": "openclaw --version",
+        "duration": 1004
+      },
+      "startTime": 1774683005107,
+      "lastHeartbeat": 1774683005107,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774683006114,
+          "outcome": "ok",
+          "duration": 1007
+        }
+      ]
+    },
+    {
+      "id": "call_3400cd86853d494780d203db",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "bf8ee520-dd75-411d-acad-72426e85b4c8",
+      "metadata": {
+        "command": "ls -la /root/.local/share/pnpm/global/5/.pnpm/ | grep openclaw",
+        "duration": 1015
+      },
+      "startTime": 1774683005160,
+      "lastHeartbeat": 1774683005160,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774683006128,
+          "outcome": "ok",
+          "duration": 968
+        }
+      ]
+    },
+    {
+      "id": "call_c85f638c34834e439b10d5d4",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "bf8ee520-dd75-411d-acad-72426e85b4c8",
+      "metadata": {
+        "command": "journalctl --user -u openclaw-gateway --since \"2026-03-28 14:00\" --no-pager | grep -i \"upgrade\\|install\\|version\" | head -20",
+        "duration": 609
+      },
+      "startTime": 1774683021869,
+      "lastHeartbeat": 1774683021869,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774683022481,
+          "outcome": "ok",
+          "duration": 612
+        }
+      ]
+    },
+    {
+      "id": "call_8ebb55124f6b4523b8f251b6",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "bf8ee520-dd75-411d-acad-72426e85b4c8",
+      "metadata": {
+        "command": "history | grep -i \"openclaw\\|upgrade\\|pnpm\" | tail -20",
+        "duration": 621
+      },
+      "startTime": 1774683021920,
+      "lastHeartbeat": 1774683021920,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774683022496,
+          "outcome": "ok",
+          "duration": 576
+        }
+      ]
+    },
+    {
+      "id": "call_d7c2717495fe4a30acce5f5e",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "bf8ee520-dd75-411d-acad-72426e85b4c8",
+      "metadata": {
+        "command": "cat ~/.bash_history | tail -50",
+        "duration": 249
+      },
+      "startTime": 1774683039380,
+      "lastHeartbeat": 1774683039380,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774683039633,
+          "outcome": "ok",
+          "duration": 253
+        }
+      ]
+    },
+    {
+      "id": "call_3a13696a59484b8a8edd1e68",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "bf8ee520-dd75-411d-acad-72426e85b4c8",
+      "metadata": {
+        "command": "pnpm list -g --depth=0 2>/dev/null | grep openclaw",
+        "duration": 1121
+      },
+      "startTime": 1774683048717,
+      "lastHeartbeat": 1774683048717,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774683049839,
+          "outcome": "ok",
+          "duration": 1122
+        }
+      ]
+    },
+    {
+      "id": "call_ce76b94fbb9e4d55bd83910e",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "bf8ee520-dd75-411d-acad-72426e85b4c8",
+      "metadata": {
+        "command": "ls -la ~/.local/share/pnpm/global/5/.pnpm/ | grep openclaw",
+        "duration": 1131
+      },
+      "startTime": 1774683048779,
+      "lastHeartbeat": 1774683048779,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774683049855,
+          "outcome": "ok",
+          "duration": 1076
+        }
+      ]
+    },
+    {
+      "id": "call_eea87e31169446bea050adf2",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "bf8ee520-dd75-411d-acad-72426e85b4c8",
+      "metadata": {
+        "command": "journalctl --since \"2026-03-28 14:50\" --until \"2026-03-28 15:10\" | grep -i \"pnpm\\|install\\|upgrade\" | head -20",
+        "duration": 322
+      },
+      "startTime": 1774683059455,
+      "lastHeartbeat": 1774683059455,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774683059780,
+          "outcome": "ok",
+          "duration": 325
+        }
+      ]
+    },
+    {
+      "id": "call_3617b0b74e5d45b59d884751",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 60,
+      "parentTaskId": "bf8ee520-dd75-411d-acad-72426e85b4c8",
+      "metadata": {
+        "command": "pnpm add -g openclaw@2026.3.13 2>&1 | tail -10",
+        "duration": 10043
+      },
+      "startTime": 1774683069373,
+      "lastHeartbeat": 1774683069373,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774683079420,
+          "outcome": "ok",
+          "duration": 10047
+        }
+      ]
+    },
+    {
+      "id": "call_b9f3994f3dbf43f6a9294421",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "bf8ee520-dd75-411d-acad-72426e85b4c8",
+      "metadata": {
+        "command": "openclaw --version",
+        "duration": 514
+      },
+      "startTime": 1774683091933,
+      "lastHeartbeat": 1774683091933,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774683092450,
+          "outcome": "ok",
+          "duration": 517
+        }
+      ]
+    },
+    {
+      "id": "call_2ca5b2018c4647ff9fedfcc8",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "bf8ee520-dd75-411d-acad-72426e85b4c8",
+      "metadata": {
+        "command": "ls -la /root/.local/share/pnpm/global/5/.pnpm/ | grep openclaw",
+        "duration": 524
+      },
+      "startTime": 1774683091983,
+      "lastHeartbeat": 1774683091983,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774683092463,
+          "outcome": "ok",
+          "duration": 480
+        }
+      ]
+    },
+    {
+      "id": "call_8082a0ed695648db854d1089",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30,
+      "parentTaskId": "bf8ee520-dd75-411d-acad-72426e85b4c8",
+      "metadata": {
+        "command": "openclaw gateway restart 2>&1",
+        "duration": 10050
+      },
+      "startTime": 1774683107113,
+      "lastHeartbeat": 1774683107113,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774683117197,
+          "outcome": "ok",
+          "duration": 10084
+        }
+      ]
+    },
+    {
+      "id": "call_7e7a2cd08f004c5e891f4312",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "b70014ba-4898-455b-9207-e0178ce6f536",
+      "metadata": {
+        "command": "openclaw gateway status 2>&1",
+        "duration": 10061
+      },
+      "startTime": 1774683268746,
+      "lastHeartbeat": 1774683268746,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774683278822,
+          "outcome": "ok",
+          "duration": 10076
+        }
+      ]
+    },
+    {
+      "id": "call_1870e183d6a14704ba9ab716",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 120,
+      "parentTaskId": "261e5c6a-14c1-464f-aeca-ead39cf6ef51",
+      "metadata": {
+        "command": "openclaw doctor --repair 2>&1",
+        "duration": 9865
+      },
+      "startTime": 1774683342400,
+      "lastHeartbeat": 1774683342400,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774683352269,
+          "outcome": "ok",
+          "duration": 9869
+        }
+      ]
+    },
+    {
+      "id": "call_632781221e6b4084a39302c1",
+      "type": "exec",
+      "status": "timeout",
+      "timeoutMs": 1800000,
+      "parentTaskId": "261e5c6a-14c1-464f-aeca-ead39cf6ef51",
+      "metadata": {
+        "command": "systemctl --user stop openclaw-gateway 2>&1",
+        "toolName": "exec"
+      },
+      "startTime": 1774683361266,
+      "lastHeartbeat": 1774683361266,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": []
+    },
+    {
+      "id": "call_f9b3f00188d64dedb72e510a",
+      "type": "exec",
+      "status": "timeout",
+      "timeoutMs": 1800000,
+      "parentTaskId": "261e5c6a-14c1-464f-aeca-ead39cf6ef51",
+      "metadata": {
+        "command": "cat ~/.config/systemd/user/openclaw-gateway.service",
+        "toolName": "exec"
+      },
+      "startTime": 1774683361325,
+      "lastHeartbeat": 1774683361325,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": []
+    },
+    {
+      "id": "call_ea6b18ce9a8748a585d1eb3f",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "686d8b31-36fb-4c70-95fa-f431c62e6835",
+      "metadata": {
+        "command": "cat ~/.config/systemd/user/openclaw-gateway.service 2>/dev/null || echo \"文件不存在\"",
+        "duration": 42
+      },
+      "startTime": 1774684331668,
+      "lastHeartbeat": 1774684331668,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774684331717,
+          "outcome": "ok",
+          "duration": 49
+        }
+      ]
+    },
+    {
+      "id": "call_f6c61edcc6004693a1a77bf1",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 5,
+      "parentTaskId": "acc4f44b-2d63-4ce9-8856-6e05fe231b2d",
+      "metadata": {
+        "command": "echo \"=== 1. 文件所有权 ===\" && \\\nls -la /root/.openclaw/extensions/github-pr-auto-fix/ | head -15\n\necho \"\"\necho \"=== 2. package.json 配置 ===\" && \\\ncat /root/.openclaw/extensions/github-pr-auto-fix/package.json\n\necho \"\"\necho \"=== 3. openclaw.plugin.json ===\" && \\\ncat /root/.openclaw/extensions/github-pr-auto-fix/openclaw.plugin.json",
+        "duration": 38
+      },
+      "startTime": 1774684411790,
+      "lastHeartbeat": 1774684411790,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774684411834,
+          "outcome": "ok",
+          "duration": 44
+        }
+      ]
+    },
+    {
+      "id": "call_7911eff637b74583947d6071",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30,
+      "parentTaskId": "acc4f44b-2d63-4ce9-8856-6e05fe231b2d",
+      "metadata": {
+        "command": "echo \"=== 4. 子目录状态 ===\" && \\\nls -la /root/.openclaw/extensions/github-pr-auto-fix/handlers/ && \\\nls -la /root/.openclaw/extensions/github-pr-auto-fix/lib/\n\necho \"\"\necho \"=== 5. Git 状态 ===\" && \\\ncd /root/.openclaw/extensions/github-pr-auto-fix && \\\ngit status --short 2>/dev/null | head -20\n\necho \"\"\necho \"=== 6. 插件加载验证 ===\" && \\\nopenclaw doctor 2>&1 | grep -E \"github-pr-auto-fix|blocked|suspicious\" | head -10",
+        "duration": 10051
+      },
+      "startTime": 1774684429739,
+      "lastHeartbeat": 1774684429739,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774684439812,
+          "outcome": "ok",
+          "duration": 10073
+        }
+      ]
+    },
+    {
+      "id": "call_dc2f8a5ed82e4a0ab69353d3",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 10,
+      "parentTaskId": "acc4f44b-2d63-4ce9-8856-6e05fe231b2d",
+      "metadata": {
+        "command": "echo \"=== 7. Webhook 端点测试 ===\" && \\\ncurl -X POST -s http://localhost:26368/github-pr-auto-fix/webhook 2>&1 | head -5\n\necho \"\"\necho \"=== 8. 插件配置检查 ===\" && \\\npython3 -c \"\nimport json\nconfig = json.load(open('/root/.openclaw/openclaw.json'))\nplugins = config.get('plugins', {})\n\nprint('allow 列表:', 'github-pr-auto-fix' in plugins.get('allow', []))\nprint('entries:', 'github-pr-auto-fix' in plugins.get('entries', {}))\nprint('installs:', 'github-pr-auto-fix' in plugins.get('installs', {}))\n\nif 'github-pr-auto-fix' in plugins.get('entries', {}):\n    entry = plugins['entries']['github-pr-auto-fix']\n    print('enabled:', entry.get('enabled'))\n    print('config:', '有配置' if entry.get('config') else '无配置')\n\"\n\necho \"\"\necho \"=== 9. 测试文件检查 ===\" && \\\nls -la /root/.openclaw/extensions/github-pr-auto-fix/tests/ 2>/dev/null | head -10 || echo \"无 tests 目录\"",
+        "duration": 188
+      },
+      "startTime": 1774684462541,
+      "lastHeartbeat": 1774684462541,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774684462735,
+          "outcome": "ok",
+          "duration": 194
+        }
+      ]
+    },
+    {
+      "id": "call_acde58c92e8d4e438236594f",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 5,
+      "parentTaskId": "acc4f44b-2d63-4ce9-8856-6e05fe231b2d",
+      "metadata": {
+        "command": "# 清理空目录\nrmdir /root/.openclaw/extensions/github-pr-auto-fix/handlers 2>/dev/null && echo \"✓ 已删除空的 handlers 目录\" || echo \"handlers 目录不存在或不为空\"\nrmdir /root/.openclaw/extensions/github-pr-auto-fix/lib 2>/dev/null && echo \"✓ 已删除空的 lib 目录\" || echo \"lib 目录不存在或不为空\"\n\n# 检查 Git 状态\necho \"\"\necho \"=== Git 未提交的修改 ===\"\ncd /root/.openclaw/extensions/github-pr-auto-fix && \\\ngit status --short 2>/dev/null",
+        "duration": 36
+      },
+      "startTime": 1774684484419,
+      "lastHeartbeat": 1774684484419,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774684484461,
+          "outcome": "ok",
+          "duration": 42
+        }
+      ]
+    },
+    {
+      "id": "call_35dbbf1674674fbabfc0780d",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 10,
+      "parentTaskId": "acc4f44b-2d63-4ce9-8856-6e05fe231b2d",
+      "metadata": {
+        "command": "echo \"=== 最终验证 ===\" && \\\necho \"\" && \\\necho \"1. 插件文件结构:\" && \\\ntree -L 2 /root/.openclaw/extensions/github-pr-auto-fix/ 2>/dev/null || \\\nfind /root/.openclaw/extensions/github-pr-auto-fix/ -maxdepth 2 -type f | head -20\n\necho \"\" && \\\necho \"2. 插件加载状态:\" && \\\ncurl -s http://localhost:26368/health\n\necho \"\" && \\\necho \"3. Webhook 端点:\" && \\\ncurl -s -o /dev/null -w \"%{http_code}\" -X POST http://localhost:26368/github-pr-auto-fix/webhook && echo \" (401 是正确的，需要签名)\"",
+        "duration": 69
+      },
+      "startTime": 1774684496993,
+      "lastHeartbeat": 1774684496993,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774684497069,
+          "outcome": "ok",
+          "duration": 76
+        }
+      ]
+    },
+    {
+      "id": "call_436d54a706014e96afdb7cb9",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "56ffeff9-91e0-4ab6-b385-8dfd7f1a5fb9",
+      "metadata": {
+        "command": "systemctl --user daemon-reload && systemctl --user start openclaw-gateway && sleep 3 && systemctl --user status openclaw-gateway --no-pager | head -20",
+        "duration": 3889
+      },
+      "startTime": 1774684535723,
+      "lastHeartbeat": 1774684535723,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774684539628,
+          "outcome": "ok",
+          "duration": 3905
+        }
+      ]
+    },
+    {
+      "id": "call_6ee67be53df04054a4b9ba0d",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 5,
+      "parentTaskId": "80e862a9-9415-4974-8dde-12b257fe8707",
+      "metadata": {
+        "command": "grep -A5 \"blocked plugin\\|suspicious ownership\" /root/.openclaw/logs/plugin-permission-fix.log 2>/dev/null | tail -10",
+        "duration": 268
+      },
+      "startTime": 1774684572405,
+      "lastHeartbeat": 1774684572405,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774684572678,
+          "outcome": "ok",
+          "duration": 273
+        }
+      ]
+    },
+    {
+      "id": "call_b88fe94b189542c5ac104555",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 5,
+      "parentTaskId": "3702c7c8-b8a4-4e12-9de1-935958945adc",
+      "metadata": {
+        "command": "openclaw --version",
+        "duration": 351
+      },
+      "startTime": 1774684936902,
+      "lastHeartbeat": 1774684936902,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774684937258,
+          "outcome": "ok",
+          "duration": 356
+        }
+      ]
+    },
+    {
+      "id": "call_e59d20c9acf84b74820b1866",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 5,
+      "parentTaskId": "3702c7c8-b8a4-4e12-9de1-935958945adc",
+      "metadata": {
+        "command": "openclaw --version && \\\necho \"\" && \\\nnpm list -g openclaw 2>/dev/null | grep openclaw && \\\necho \"\" && \\\nwhich openclaw",
+        "duration": 1516
+      },
+      "startTime": 1774684949280,
+      "lastHeartbeat": 1774684949280,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774684950801,
+          "outcome": "ok",
+          "duration": 1521
+        }
+      ]
+    },
+    {
+      "id": "call_fdb10b4a3e624e598f1228c7",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 5,
+      "parentTaskId": "3702c7c8-b8a4-4e12-9de1-935958945adc",
+      "metadata": {
+        "command": "echo \"=== CLI 版本 ===\" && \\\nopenclaw --version\n\necho \"\" && \\\necho \"=== Gateway 进程启动时间 ===\" && \\\nps -p $(pgrep -f \"openclaw-gateway\" | head -1) -o lstart,cmd 2>/dev/null\n\necho \"\" && \\\necho \"=== pnpm 全局版本 ===\" && \\\npnpm list -g openclaw 2>&1 | grep -A2 \"openclaw\"",
+        "duration": 1572
+      },
+      "startTime": 1774684964699,
+      "lastHeartbeat": 1774684964699,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774684966278,
+          "outcome": "ok",
+          "duration": 1579
+        }
+      ]
+    },
+    {
+      "id": "call_0e7f02bb098548a9bc01149f",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 5,
+      "parentTaskId": "3702c7c8-b8a4-4e12-9de1-935958945adc",
+      "metadata": {
+        "command": "echo \"=== npm 最新版本 ===\" && \\\nnpm view openclaw version 2>/dev/null\n\necho \"\" && \\\necho \"=== 当前安装版本 ===\" && \\\nopenclaw --version\n\necho \"\" && \\\necho \"=== Gateway 健康 ===\" && \\\ncurl -s http://localhost:26368/health",
+        "duration": 1387
+      },
+      "startTime": 1774684980496,
+      "lastHeartbeat": 1774684980496,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774684981888,
+          "outcome": "ok",
+          "duration": 1392
+        }
+      ]
+    },
+    {
+      "id": "call_aa8f487d76b04543ba705a08",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 5,
+      "parentTaskId": "7473fdaa-d310-4644-8c9d-2ec52e983513",
+      "metadata": {
+        "command": "echo \"✅ 当前版本已确认：\" && \\\nopenclaw --version && \\\necho \"\" && \\\necho \"Gateway 状态：\" && \\\ncurl -s http://localhost:26368/health",
+        "duration": 359
+      },
+      "startTime": 1774686036448,
+      "lastHeartbeat": 1774686036448,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774686036813,
+          "outcome": "ok",
+          "duration": 365
+        }
+      ]
+    },
+    {
+      "id": "call_07038274704548d389d9aa93",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 10,
+      "parentTaskId": "a8dccbf1-ecf3-400f-a98b-2b375f8cea03",
+      "metadata": {
+        "command": "curl -s \"https://api.github.com/repos/openclaw/openclaw/releases\" | \\\npython3 -c \"\nimport json, sys\ndata = json.load(sys.stdin)\nfor release in data[:5]:\n    print(f\\\"Version: {release['tag_name']}\\\")\n    print(f\\\"Date: {release['published_at']}\\\")\n    print(f\\\"URL: {release['html_url']}\\\")\n    print('---')\n\" 2>/dev/null || echo \"无法获取 GitHub releases\"",
+        "duration": 980
+      },
+      "startTime": 1774686193490,
+      "lastHeartbeat": 1774686193490,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774686194475,
+          "outcome": "ok",
+          "duration": 985
+        }
+      ]
+    },
+    {
+      "id": "call_142abf3b1eeb4fd89222a616",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 5,
+      "parentTaskId": "a8dccbf1-ecf3-400f-a98b-2b375f8cea03",
+      "metadata": {
+        "command": "echo \"=== 当前使用的插件 ===\" && \\\npython3 -c \"\nimport json\nconfig = json.load(open('/root/.openclaw/openclaw.json'))\nplugins = config.get('plugins', {})\nprint('allow 列表:', plugins.get('allow', []))\nprint()\nprint('entries:', list(plugins.get('entries', {}).keys()))\n\"\n\necho \"\"\necho \"=== extensions 目录下的插件 ===\" && \\\nls -1 /root/.openclaw/extensions/\n\necho \"\"\necho \"=== 已安装的 skills ===\" && \\\nls -1 /root/.openclaw/workspace/skills/ 2>/dev/null | head -20",
+        "duration": 280
+      },
+      "startTime": 1774686226032,
+      "lastHeartbeat": 1774686226032,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774686226317,
+          "outcome": "ok",
+          "duration": 285
+        }
+      ]
+    },
+    {
+      "id": "call_b7936d10daa348d69e98e2b9",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "f5eda80b-ed4f-4c43-9888-cd5dc2da9860",
+      "metadata": {
+        "command": "ls -la ~/.openclaw/workspace/memory/cc-personality-index.md ~/.openclaw/workspace/memory/cc-personality-history.md",
+        "duration": 563
+      },
+      "startTime": 1774686329083,
+      "lastHeartbeat": 1774686329083,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774686329647,
+          "outcome": "ok",
+          "duration": 564
+        }
+      ]
+    },
+    {
+      "id": "call_e7f607cad4d844f399a1605b",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "f5eda80b-ed4f-4c43-9888-cd5dc2da9860",
+      "metadata": {
+        "command": "ls -la ~/.openclaw/extensions/task-monitor/.git 2>/dev/null || echo \"task-monitor 未初始化 git\"",
+        "duration": 597
+      },
+      "startTime": 1774686329130,
+      "lastHeartbeat": 1774686329130,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774686329681,
+          "outcome": "ok",
+          "duration": 551
+        }
+      ]
+    },
+    {
+      "id": "call_c6334c101dd64512924ff607",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "f5eda80b-ed4f-4c43-9888-cd5dc2da9860",
+      "metadata": {
+        "command": "ls -la ~/.openclaw/extensions/github-pr-auto-fix/.git 2>/dev/null || echo \"github-pr-auto-fix 未初始化 git\"",
+        "duration": 613
+      },
+      "startTime": 1774686329144,
+      "lastHeartbeat": 1774686329144,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774686329701,
+          "outcome": "ok",
+          "duration": 557
+        }
+      ]
+    },
+    {
+      "id": "call_aacb3f7f75e7402ca0cb8a57",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "f5eda80b-ed4f-4c43-9888-cd5dc2da9860",
+      "metadata": {
+        "command": "cd ~/.openclaw/extensions/task-monitor && git status",
+        "duration": 406
+      },
+      "startTime": 1774686345592,
+      "lastHeartbeat": 1774686345592,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774686346004,
+          "outcome": "ok",
+          "duration": 412
+        }
+      ]
+    },
+    {
+      "id": "call_ee91d9f07ab94353adb436f0",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "f5eda80b-ed4f-4c43-9888-cd5dc2da9860",
+      "metadata": {
+        "command": "cd ~/.openclaw/extensions/github-pr-auto-fix && git status",
+        "duration": 436
+      },
+      "startTime": 1774686345644,
+      "lastHeartbeat": 1774686345644,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774686346033,
+          "outcome": "ok",
+          "duration": 389
+        }
+      ]
+    },
+    {
+      "id": "call_a45c8f6c974b48ea87a0179d",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "f5eda80b-ed4f-4c43-9888-cd5dc2da9860",
+      "metadata": {
+        "command": "cd ~/.openclaw/extensions/task-monitor && git log --oneline -5",
+        "duration": 281
+      },
+      "startTime": 1774686366793,
+      "lastHeartbeat": 1774686366793,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774686367079,
+          "outcome": "ok",
+          "duration": 286
+        }
+      ]
+    },
+    {
+      "id": "call_53ba12d282f34a33aa7af71a",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "f5eda80b-ed4f-4c43-9888-cd5dc2da9860",
+      "metadata": {
+        "command": "mkdir -p ~/.openclaw/workspace/memory/cc-expert && cd ~/.openclaw/workspace/memory/cc-expert && cp ../cc-personality-index.md ../cc-personality-history.md . && ls -la",
+        "duration": 279
+      },
+      "startTime": 1774686389339,
+      "lastHeartbeat": 1774686389339,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774686389621,
+          "outcome": "ok",
+          "duration": 282
+        }
+      ]
+    },
+    {
+      "id": "call_65482bcae9014e25a00c42d2",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "f5eda80b-ed4f-4c43-9888-cd5dc2da9860",
+      "metadata": {
+        "command": "cd ~/.openclaw/workspace/memory/cc-expert && git init && git config user.email \"bjyounger@users.noreply.github.com\" && git config user.name \"bjyounger\" && git add -A && git commit -m \"Initial commit: CC 人格索引系统\"",
+        "duration": 422
+      },
+      "startTime": 1774686420164,
+      "lastHeartbeat": 1774686420164,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774686420588,
+          "outcome": "ok",
+          "duration": 424
+        }
+      ]
+    },
+    {
+      "id": "call_2e71e4eb1cd44ac0a661876b",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "f5eda80b-ed4f-4c43-9888-cd5dc2da9860",
+      "metadata": {
+        "command": "cd ~/.openclaw/workspace/memory/cc-expert && gh repo create cc-personality-index --public --source=. --push --description \"Claude Code 人格索引系统\"",
+        "duration": 2994
+      },
+      "startTime": 1774686420214,
+      "lastHeartbeat": 1774686420214,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774686423163,
+          "outcome": "ok",
+          "duration": 2949
+        }
+      ]
+    },
+    {
+      "id": "call_13571ed0d7cf4e899047b63e",
+      "type": "exec",
+      "status": "timeout",
+      "timeoutMs": 10,
+      "parentTaskId": "4137f136-af00-4bca-8ed4-5f66581beab5",
+      "metadata": {
+        "command": "echo \"=== 1. 备份配置 ===\" && \\\nTIMESTAMP=$(date +%Y%m%d_%H%M%S) && \\\nBACKUP_DIR=\"/root/.openclaw/backups/pre-3.24-upgrade-$TIMESTAMP\" && \\\nmkdir -p \"$BACKUP_DIR\" && \\\ncp -r /root/.openclaw/openclaw.json \"$BACKUP_DIR/\" && \\\ncp -r /root/.openclaw/extensions \"$BACKUP_DIR/\" && \\\necho \"✓ 已备份到: $BACKUP_DIR\"\n\necho \"\" && \\\necho \"=== 2. 记录当前版本 ===\" && \\\nopenclaw --version\n\necho \"\" && \\\necho \"=== 3. 记录当前插件状态 ===\" && \\\npython3 -c \"\nimport json\nconfig = json.load(open('/root/.openclaw/openclaw.json'))\nplugins ",
+        "toolName": "exec"
+      },
+      "startTime": 1774686492391,
+      "lastHeartbeat": 1774686492391,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": []
+    },
+    {
+      "id": "call_ab51a73652ec427ebe7bf991",
+      "type": "exec",
+      "status": "timeout",
+      "timeoutMs": 5,
+      "parentTaskId": "4137f136-af00-4bca-8ed4-5f66581beab5",
+      "metadata": {
+        "command": "# 快速备份\nTIMESTAMP=$(date +%Y%m%d_%H%M%S)\nBACKUP_DIR=\"/root/.openclaw/backups/pre-3.24-upgrade-$TIMESTAMP\"\nmkdir -p \"$BACKUP_DIR\"\ncp /root/.openclaw/openclaw.json \"$BACKUP_DIR/\"\necho \"✓ 配置已备份到: $BACKUP_DIR\"",
+        "toolName": "exec"
+      },
+      "startTime": 1774686524642,
+      "lastHeartbeat": 1774686524642,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": []
+    },
+    {
+      "id": "call_9d734e23c1d84aeb96847a74",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 120,
+      "parentTaskId": "4137f136-af00-4bca-8ed4-5f66581beab5",
+      "metadata": {
+        "command": "echo \"=== 升级前版本 ===\" && \\\nopenclaw --version\n\necho \"\" && \\\necho \"=== 开始升级 ===\" && \\\npnpm add -g openclaw@2026.3.24 2>&1 | tail -30",
+        "duration": 10048
+      },
+      "startTime": 1774686539230,
+      "lastHeartbeat": 1774686539230,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774686549303,
+          "outcome": "ok",
+          "duration": 10073
+        }
+      ]
+    },
+    {
+      "id": "call_55b50d000396450b84ee27d2",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "4719bebe-06f7-43a9-a014-5bd86e8ea367",
+      "metadata": {
+        "command": "cat ~/.openclaw/openclaw.json | jq '.models, .agents.defaults.model'",
+        "duration": 705
+      },
+      "startTime": 1774686541744,
+      "lastHeartbeat": 1774686541744,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774686542458,
+          "outcome": "ok",
+          "duration": 714
+        }
+      ]
+    },
+    {
+      "id": "call_74f9b098e84b4639b5b0d333",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "4719bebe-06f7-43a9-a014-5bd86e8ea367",
+      "metadata": {
+        "command": "openclaw models list 2>&1 | head -30",
+        "duration": 10096
+      },
+      "startTime": 1774686541795,
+      "lastHeartbeat": 1774686541795,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774686551858,
+          "outcome": "ok",
+          "duration": 10063
+        }
+      ]
+    },
+    {
+      "id": "call_dd98a56a5cdf47ddaeaefb24",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 5,
+      "parentTaskId": "4137f136-af00-4bca-8ed4-5f66581beab5",
+      "metadata": {
+        "command": "echo \"=== 升级后版本 ===\" && \\\nopenclaw --version\n\necho \"\" && \\\necho \"=== Gateway 状态 ===\" && \\\nps aux | grep \"openclaw-gateway\" | grep -v grep | head -2",
+        "duration": 879
+      },
+      "startTime": 1774686574144,
+      "lastHeartbeat": 1774686574144,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774686575028,
+          "outcome": "ok",
+          "duration": 884
+        }
+      ]
+    },
+    {
+      "id": "call_b6ae3c80e6834db58670cfbc",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30,
+      "parentTaskId": "4137f136-af00-4bca-8ed4-5f66581beab5",
+      "metadata": {
+        "command": "echo \"=== 插件加载检查 ===\" && \\\nopenclaw doctor 2>&1 | grep -E \"task-monitor|github-pr-auto-fix|blocked|suspicious|error\" | head -20",
+        "duration": 10028
+      },
+      "startTime": 1774686591556,
+      "lastHeartbeat": 1774686591556,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774686601594,
+          "outcome": "ok",
+          "duration": 10038
+        }
+      ]
+    },
+    {
+      "id": "call_6f35d8bf9c7f4d8fa4c2bdef",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "4719bebe-06f7-43a9-a014-5bd86e8ea367",
+      "metadata": {
+        "command": "cd ~/.openclaw/extensions/task-monitor && git remote -v",
+        "duration": 614
+      },
+      "startTime": 1774686604619,
+      "lastHeartbeat": 1774686604619,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774686605234,
+          "outcome": "ok",
+          "duration": 615
+        }
+      ]
+    },
+    {
+      "id": "call_ec1007a3333548ad9675e64a",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 1800000,
+      "parentTaskId": "4719bebe-06f7-43a9-a014-5bd86e8ea367",
+      "metadata": {
+        "command": "cd ~/.openclaw/extensions/github-pr-auto-fix && git remote -v",
+        "duration": 640
+      },
+      "startTime": 1774686604669,
+      "lastHeartbeat": 1774686604669,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774686605265,
+          "outcome": "ok",
+          "duration": 596
+        }
+      ]
+    },
+    {
+      "id": "call_bf740b3b064b465d8a4146ea",
+      "type": "exec",
+      "status": "running",
+      "timeoutMs": 1800000,
+      "parentTaskId": "4719bebe-06f7-43a9-a014-5bd86e8ea367",
+      "metadata": {
+        "command": "cd ~/.openclaw/extensions/task-monitor && git add -A && git status",
+        "toolName": "exec"
+      },
+      "startTime": 1774686628664,
+      "lastHeartbeat": 1774686628664,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": []
+    },
+    {
+      "id": "call_81bff953a06546659ba45e58",
+      "type": "exec",
+      "status": "running",
+      "timeoutMs": 1800000,
+      "parentTaskId": "4719bebe-06f7-43a9-a014-5bd86e8ea367",
+      "metadata": {
+        "command": "cd ~/.openclaw/extensions/github-pr-auto-fix && git status",
+        "toolName": "exec"
+      },
+      "startTime": 1774686628715,
+      "lastHeartbeat": 1774686628715,
       "retryCount": 0,
       "maxRetries": 2,
       "retryHistory": []
     }
   ],
   "version": "2.0.0",
-  "lastUpdated": 1774682834595
+  "lastUpdated": 1774686628715
 }
