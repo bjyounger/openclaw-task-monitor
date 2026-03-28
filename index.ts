@@ -403,14 +403,14 @@ async function sendNotification(alertType: string, message: string): Promise<voi
 const plugin = {
   id: "task-monitor",
   name: "Task Monitor",
-  description: "监控子任务生命周期、自动重试、任务链追踪、进度报告、主任务监控、停滞检测、超时检测（v11 - 配置化）",
+  description: "监控子任务生命周期、自动重试、任务链追踪、进度报告、主任务监控、停滞检测、超时检测、exec进程监控、失败实时上报（v12）",
   configSchema: emptyPluginConfigSchema(),
 
   register(api: OpenClawPluginApi) {
     // ==================== 加载配置 ====================
     const config = loadConfig();
-    console.log(`[task-monitor] Plugin registering (v11, config version: ${config.version})...`);
-    api.logger.info?.(`[task-monitor] Plugin registering (v11, config version: ${config.version})...`);
+    console.log(`[task-monitor] Plugin registering (v12, config version: ${config.version})...`);
+    api.logger.info?.(`[task-monitor] Plugin registering (v12, config version: ${config.version})...`);
 
     // 从配置中提取常用路径
     const TASKS_DIR = config.storage.tasksDir;
@@ -1104,6 +1104,17 @@ const plugin = {
         await stateManager.updateTask(runId, { status: outcome === "timeout" ? "timeout" : "failed" });
         await stateManager.recordRetryOutcome(runId, outcome, data.error);
 
+        // ==================== 实时上报失败 ====================
+        // 立即发送失败通知（不等待重试决策）
+        const failureMessage = data.error || outcome;
+        await sendNotification(
+          outcome === "timeout" ? "subtask_timeout_realtime" : "subtask_failed_realtime",
+          `🚨 子任务${outcome === "timeout" ? "超时" : "失败"} (实时告警)\n\n` +
+          `任务: ${label}\n` +
+          `原因: ${failureMessage.slice(0, 200)}`
+        );
+        api.logger.warn?.(`[task-monitor] Subagent failed (real-time report): ${runId}, outcome: ${outcome}`);
+
         // 检查是否应该重试
         const shouldRetry = await stateManager.shouldRetry(runId);
 
@@ -1146,6 +1157,118 @@ const plugin = {
       }
     });
 
+    // ==================== 监听 exec 进程 (v12: before_tool_call/after_tool_call hooks) ====================
+    // 追踪正在执行的 exec 任务
+    const execTasks = new Map<string, { startTime: number; command: string; runId?: string; sessionKey?: string }>();
+
+    api.on("before_tool_call", async (event) => {
+      try {
+        // 只监控 Bash/exec 相关工具
+        if (event.toolName !== "Bash" && event.toolName !== "exec") return;
+
+        const params = event.params as { command?: string; timeout?: number };
+        const command = params.command || "unknown command";
+        const execId = event.toolCallId || `exec-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+        api.logger.info?.(`[task-monitor] Exec started: ${execId}, command: ${command.slice(0, 100)}`);
+
+        // 记录到追踪 map
+        execTasks.set(execId, {
+          startTime: Date.now(),
+          command,
+          runId: event.runId,
+          sessionKey: (event as any).sessionKey,
+        });
+
+        // 注册到状态管理器
+        if (stateManager) {
+          try {
+            await stateManager.registerTask({
+              id: execId,
+              type: "exec",
+              status: "running",
+              timeoutMs: params.timeout || config.monitoring.subtaskTimeout,
+              parentTaskId: event.runId || null,
+              metadata: {
+                command: command.slice(0, 500),
+                toolName: event.toolName,
+                sessionKey: (event as any).sessionKey,
+              },
+            });
+          } catch (e: any) {
+            if (!e.message?.includes("已存在")) {
+              api.logger.error?.(`[task-monitor] Failed to register exec task: ${e}`);
+            }
+          }
+        }
+      } catch (e) {
+        api.logger.error?.(`[task-monitor] Error in before_tool_call hook: ${e}`);
+      }
+    });
+
+    api.on("after_tool_call", async (event) => {
+      try {
+        // 只监控 Bash/exec 相关工具
+        if (event.toolName !== "Bash" && event.toolName !== "exec") return;
+
+        const execId = event.toolCallId || `exec-${Date.now()}`;
+        const execTask = execTasks.get(execId);
+
+        if (!execTask) {
+          api.logger.debug?.(`[task-monitor] Exec task not found in tracking map: ${execId}`);
+          return;
+        }
+
+        const duration = Date.now() - execTask.startTime;
+        const isError = !!event.error;
+        const isTimeout = event.error?.toLowerCase().includes("timeout") || false;
+
+        api.logger.info?.(`[task-monitor] Exec ended: ${execId}, duration: ${duration}ms, error: ${isError}`);
+
+        // 从追踪 map 移除
+        execTasks.delete(execId);
+
+        // 更新状态管理器
+        if (stateManager) {
+          const status = isError ? (isTimeout ? "timeout" : "failed") : "completed";
+          await stateManager.updateTask(execId, {
+            status,
+            metadata: {
+              command: execTask.command,
+              duration,
+              error: event.error,
+            },
+          });
+
+          // 记录结果
+          if (isError) {
+            await stateManager.recordRetryOutcome(execId, isTimeout ? "timeout" : "error", event.error);
+          } else {
+            await stateManager.recordRetryOutcome(execId, "ok");
+          }
+        }
+
+        // ==================== 实时上报失败 ====================
+        if (isError) {
+          const errorMessage = event.error || "Unknown error";
+          const commandPreview = execTask.command.slice(0, 100);
+
+          // 立即发送失败通知
+          await sendNotification(
+            isTimeout ? "exec_timeout" : "exec_failed",
+            `⚠️ Exec ${isTimeout ? "超时" : "失败"}\n\n` +
+            `命令: ${commandPreview}\n` +
+            `执行时长: ${Math.floor(duration / 1000)}秒\n` +
+            `错误: ${errorMessage.slice(0, 200)}`
+          );
+
+          api.logger.warn?.(`[task-monitor] Exec failed (real-time report): ${execId}, error: ${errorMessage.slice(0, 100)}`);
+        }
+      } catch (e) {
+        api.logger.error?.(`[task-monitor] Error in after_tool_call hook: ${e}`);
+      }
+    });
+
     // ==================== 清理定时器 ====================
     const cleanup = () => {
       clearInterval(timeoutChecker);
@@ -1162,7 +1285,7 @@ const plugin = {
     process.on("SIGTERM", cleanup);
     process.on("SIGINT", cleanup);
 
-    api.logger.info?.("[task-monitor] Plugin registration complete (v11)");
+    api.logger.info?.("[task-monitor] Plugin registration complete (v12)");
   },
 };
 
