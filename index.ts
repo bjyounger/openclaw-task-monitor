@@ -586,22 +586,11 @@ const plugin = {
                   api.logger.info?.(`[task-monitor] Task file moved to completed: ${file}`);
                   
                   // 移动成功后再发送通知
-                  // 从任务记录中提取频道信息，动态发送通知
+                  // 从任务记录中直接读取频道和通知目标
                   const channelMatch = content.match(/\*\*频道\*\*:\s*(\S+)/);
-                  const senderIdMatch = content.match(/\*\*发送者ID\*\*:\s*(\S+)/);
+                  const notifyTargetMatch = content.match(/\*\*通知目标\*\*:\s*(\S+)/);
                   const taskChannel = channelMatch ? channelMatch[1] : config.notification.channel;
-                  const taskSenderId = senderIdMatch ? senderIdMatch[1] : config.notification.target;
-                  
-                  // 构建动态通知目标（处理 unknown 和 cron 任务）
-                  let notifyTarget: string;
-                  if (taskSenderId === "unknown" || !taskSenderId) {
-                    // cron 任务或未知发送者，使用默认配置
-                    notifyTarget = config.notification.target;
-                  } else if (taskChannel === "telegram") {
-                    notifyTarget = taskSenderId;
-                  } else {
-                    notifyTarget = `${taskChannel}:${taskSenderId}`;
-                  }
+                  const notifyTarget = notifyTargetMatch ? notifyTargetMatch[1] : config.notification.target;
                   
                   api.logger.info?.(`[task-monitor] Sending completion notification to ${taskChannel}: ${notifyTarget}`);
                   
@@ -818,6 +807,11 @@ const plugin = {
                   const channel = eventData?.inboundMeta?.channel || eventData?.channel || config.notification.channel;
                   const senderId = eventData?.inboundMeta?.sender_id || eventData?.senderId || "unknown";
                   
+                  // 确定通知目标（cron 任务使用默认配置）
+                  const notifyTarget = (senderId === "unknown" || !senderId) 
+                    ? config.notification.target 
+                    : senderId;
+                  
                   const taskContent = `# 任务记录
 
 **SessionKey**: ${evt.sessionKey}
@@ -825,7 +819,7 @@ const plugin = {
 **创建时间**: ${new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })}
 **状态**: running
 **频道**: ${channel}
-**发送者ID**: ${senderId}
+**通知目标**: ${notifyTarget}
 
 ## 任务描述
 
@@ -837,7 +831,7 @@ const plugin = {
 `;
                   
                   fs.writeFileSync(taskFilePath, taskContent, "utf-8");
-                  api.logger.info?.(`[task-monitor] Auto-created task record: ${taskFileName} (channel: ${channel})`);
+                  api.logger.info?.(`[task-monitor] Auto-created task record: ${taskFileName} (channel: ${channel}, notifyTarget: ${notifyTarget})`);
                 }
               } catch (error) {
                 api.logger.error?.(`[task-monitor] Failed to create task record: ${error}`);
@@ -880,22 +874,11 @@ const plugin = {
                       fs.writeFileSync(filePath, content, "utf-8");
                       api.logger.info?.(`[task-monitor] Updated task status to completed: ${file}`);
                       
-                      // 从任务记录中提取频道信息，动态发送通知
+                      // 从任务记录中直接读取频道和通知目标
                       const channelMatch = content.match(/\*\*频道\*\*:\s*(\S+)/);
-                      const senderIdMatch = content.match(/\*\*发送者ID\*\*:\s*(\S+)/);
+                      const notifyTargetMatch = content.match(/\*\*通知目标\*\*:\s*(\S+)/);
                       const taskChannel = channelMatch ? channelMatch[1] : config.notification.channel;
-                      const taskSenderId = senderIdMatch ? senderIdMatch[1] : config.notification.target;
-                      
-                      // 构建动态通知目标（处理 unknown 和 cron 任务）
-                      let notifyTarget: string;
-                      if (taskSenderId === "unknown" || !taskSenderId) {
-                        // cron 任务或未知发送者，使用默认配置
-                        notifyTarget = config.notification.target;
-                      } else if (taskChannel === "telegram") {
-                        notifyTarget = taskSenderId;
-                      } else {
-                        notifyTarget = `${taskChannel}:${taskSenderId}`;
-                      }
+                      const notifyTarget = notifyTargetMatch ? notifyTargetMatch[1] : config.notification.target;
                       
                       api.logger.info?.(`[task-monitor] Sending completion notification to ${taskChannel}: ${notifyTarget}`);
                       
@@ -1329,14 +1312,17 @@ const plugin = {
           sessionKey: (event as any).sessionKey,
         });
 
-        // 注册到状态管理器
+        // 注册到状态管理器（设置最小 timeout 为 30 秒，避免立即超时）
         if (stateManager) {
+          const minTimeout = 30000; // 30 秒最小超时
+          const execTimeout = Math.max(params.timeout || 0, minTimeout);
+          
           try {
             await stateManager.registerTask({
               id: execId,
               type: "exec",
               status: "running",
-              timeoutMs: params.timeout || config.monitoring.subtaskTimeout,
+              timeoutMs: execTimeout,
               parentTaskId: event.runId || null,
               metadata: {
                 command: command.slice(0, 500),
