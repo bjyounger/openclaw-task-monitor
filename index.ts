@@ -2,7 +2,9 @@ import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import { emptyPluginConfigSchema } from "openclaw/plugin-sdk";
 import * as path from "path";
 import * as fs from "fs";
-import { spawn } from "child_process";
+import { spawn, exec as execCallback } from "child_process";
+import { promisify } from "util";
+const exec = promisify(execCallback);
 import * as readline from "readline";
 import { 
   StateManager, 
