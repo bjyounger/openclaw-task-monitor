@@ -437,6 +437,86 @@ const plugin = {
     }
     api.logger.info?.("[task-monitor] Message queue initialized");
 
+    // ==================== 启动时状态恢复 ====================
+    async function recoverRunningTasks(): Promise<void> {
+      const runningDir = path.join(TASKS_DIR, "running");
+      
+      if (!fs.existsSync(runningDir)) {
+        api.logger.info?.("[task-monitor] No running tasks directory, skip recovery");
+        return;
+      }
+      
+      const taskFiles = fs.readdirSync(runningDir).filter(f => f.endsWith(".md"));
+      
+      if (taskFiles.length === 0) {
+        api.logger.info?.("[task-monitor] No running tasks to recover");
+        return;
+      }
+      
+      api.logger.info?.(`[task-monitor] Found ${taskFiles.length} running tasks, checking for recovery...`);
+      
+      let recovered = 0;
+      for (const file of taskFiles) {
+        const filePath = path.join(runningDir, file);
+        try {
+          const content = fs.readFileSync(filePath, "utf-8");
+          
+          // 提取 sessionKey
+          const sessionKeyMatch = content.match(/\*\*SessionKey\*\*:\s*(.+)/m);
+          if (!sessionKeyMatch) continue;
+          
+          const sessionKey = sessionKeyMatch[1].trim();
+          
+          // 检查 StateManager 中是否有对应任务
+          const existingTask = await stateManager?.getTask(sessionKey);
+          
+          if (!existingTask) {
+            // 检查任务状态
+            const isCompleted = content.includes("**状态**: completed") || content.includes("状态: completed");
+            const isPending = content.includes("**状态**: pending") || content.includes("状态: pending");
+            const isRunning = content.includes("**状态**: running") || content.includes("状态: running");
+            
+            // 只恢复 running 状态的任务
+            if (isRunning && !isCompleted) {
+              await stateManager?.createTask({
+                id: sessionKey,
+                type: 'main',
+                status: 'running',
+                startTime: Date.now(),
+                lastHeartbeat: Date.now(),
+                timeoutMs: config.monitoring.mainTaskTimeout,
+                parentTaskId: null,
+                retryCount: 0,
+                maxRetries: 0,
+                retryHistory: [],
+                metadata: {
+                  recovered: true,
+                  recoveredAt: Date.now(),
+                  sourceFile: file
+                }
+              });
+              
+              api.logger.info?.(`[task-monitor] Recovered task: ${sessionKey}`);
+              recovered++;
+            }
+          }
+        } catch (e) {
+          api.logger.error?.(`[task-monitor] Error recovering task ${file}: ${e}`);
+        }
+      }
+      
+      if (recovered > 0) {
+        api.logger.info?.(`[task-monitor] ✅ Recovered ${recovered} tasks`);
+      } else {
+        api.logger.info?.("[task-monitor] No tasks needed recovery");
+      }
+    }
+    
+    // 执行状态恢复
+    recoverRunningTasks().catch(e => {
+      api.logger.error?.(`[task-monitor] Recovery failed: ${e}`);
+    });
+
     // ==================== 消息队列定时器：定期清空队列 ====================
     const queueFlushTimer = setInterval(async () => {
       if (messageQueue.size() > 0) {
@@ -492,28 +572,58 @@ const plugin = {
               if (content.includes("**状态**: completed") || content.includes("状态: completed")) {
                 const taskName = file.replace(".md", "");
                 
-                // 发送通知（去重）
-                await alertManager?.sendAlert(
-                  `main_completed_${taskName}`,
-                  `✅ 主任务完成\n\n任务: ${taskName}\n时间: ${new Date().toLocaleString("zh-CN")}`,
-                  "main_completed"
-                );
-                
-                // 移动到 completed 目录
+                // 先移动文件到 completed 目录，避免重复检测
                 if (!fs.existsSync(completedDir)) {
                   fs.mkdirSync(completedDir, { recursive: true });
                 }
                 const targetPath = path.join(completedDir, file);
-                if (fs.existsSync(targetPath)) {
-                  // 目标文件已存在，添加时间戳后缀
-                  const timestamp = Date.now();
-                  const newFileName = `${file.replace('.md', '')}_${timestamp}.md`;
-                  const newTargetPath = path.join(completedDir, newFileName);
-                  fs.renameSync(filePath, newTargetPath);
-                  api.logger.info?.(`[task-monitor] Task file renamed due to conflict: ${newFileName}`);
-                } else {
+                
+                // 检查文件是否已经被移动（避免竞争）
+                if (fs.existsSync(filePath) && !fs.existsSync(targetPath)) {
                   fs.renameSync(filePath, targetPath);
                   api.logger.info?.(`[task-monitor] Task file moved to completed: ${file}`);
+                  
+                  // 移动成功后再发送通知
+                  // 从任务记录中提取频道信息，动态发送通知
+                  const channelMatch = content.match(/\*\*频道\*\*:\s*(\S+)/);
+                  const senderIdMatch = content.match(/\*\*发送者ID\*\*:\s*(\S+)/);
+                  const taskChannel = channelMatch ? channelMatch[1] : config.notification.channel;
+                  const taskSenderId = senderIdMatch ? senderIdMatch[1] : config.notification.target;
+                  
+                  // 构建动态通知目标
+                  const notifyTarget = taskChannel === "telegram" ? taskSenderId : `${taskChannel}:${taskSenderId}`;
+                  
+                  api.logger.info?.(`[task-monitor] Sending completion notification to ${taskChannel}: ${notifyTarget}`);
+                  
+                  // 直接调用 message 命令发送通知（带去重）
+                  const alertId = `main_completed_${taskName}`;
+                  
+                  // 检查是否已发送过（内存缓存 + 文件记录）
+                  if (alertManager?.shouldAlert(alertId, "main_completed")) {
+                    const notifyMessage = `✅ 主任务完成\n\n任务: ${taskName}\n时间: ${new Date().toLocaleString("zh-CN")}`;
+                    exec(
+                      `openclaw message send --channel "${taskChannel}" --target "${notifyTarget}" --message "${notifyMessage.replace(/\n/g, '\\n')}"`,
+                      { timeout: 10000 }
+                    ).then(() => {
+                      // 记录已发送
+                      alertManager?.recordAlert(alertId, "main_completed");
+                    }).catch(e => {
+                      api.logger.error?.(`[task-monitor] Failed to send completion notification: ${e}`);
+                    });
+                  } else {
+                    api.logger.debug?.(`[task-monitor] Alert already sent for ${alertId}, skipping`);
+                  }
+                }
+                
+                // 从 StateManager 中移除已完成的任务（避免重复检测）
+                const existingTask = await stateManager?.getTask(taskName);
+                if (existingTask) {
+                  await stateManager?.updateTask(taskName, { 
+                    status: 'completed',
+                    notified: true,
+                    completedAt: Date.now()
+                  });
+                  api.logger.debug?.(`[task-monitor] Marked task as completed in StateManager: ${taskName}`);
                 }
               }
               // ==================== 停滞任务检测 ====================
@@ -693,12 +803,19 @@ const plugin = {
                   const taskFileName = `main-${sessionShort}-${timestamp}.md`;
                   const taskFilePath = path.join(runningDir, taskFileName);
                   
+                  // 从事件数据中提取频道信息
+                  const eventData = evt.data as any;
+                  const channel = eventData?.inboundMeta?.channel || eventData?.channel || config.notification.channel;
+                  const senderId = eventData?.inboundMeta?.sender_id || eventData?.senderId || "unknown";
+                  
                   const taskContent = `# 任务记录
 
 **SessionKey**: ${evt.sessionKey}
 **RunId**: ${evt.runId || "N/A"}
 **创建时间**: ${new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })}
 **状态**: running
+**频道**: ${channel}
+**发送者ID**: ${senderId}
 
 ## 任务描述
 
@@ -710,7 +827,7 @@ const plugin = {
 `;
                   
                   fs.writeFileSync(taskFilePath, taskContent, "utf-8");
-                  api.logger.info?.(`[task-monitor] Auto-created task record: ${taskFileName}`);
+                  api.logger.info?.(`[task-monitor] Auto-created task record: ${taskFileName} (channel: ${channel})`);
                 }
               } catch (error) {
                 api.logger.error?.(`[task-monitor] Failed to create task record: ${error}`);
@@ -752,6 +869,27 @@ const plugin = {
                       
                       fs.writeFileSync(filePath, content, "utf-8");
                       api.logger.info?.(`[task-monitor] Updated task status to completed: ${file}`);
+                      
+                      // 从任务记录中提取频道信息，动态发送通知
+                      const channelMatch = content.match(/\*\*频道\*\*:\s*(\S+)/);
+                      const senderIdMatch = content.match(/\*\*发送者ID\*\*:\s*(\S+)/);
+                      const taskChannel = channelMatch ? channelMatch[1] : config.notification.channel;
+                      const taskSenderId = senderIdMatch ? senderIdMatch[1] : config.notification.target;
+                      
+                      // 构建动态通知目标
+                      const notifyTarget = taskChannel === "telegram" ? taskSenderId : `${taskChannel}:${taskSenderId}`;
+                      
+                      api.logger.info?.(`[task-monitor] Sending completion notification to ${taskChannel}: ${notifyTarget}`);
+                      
+                      // 直接调用 message 命令发送通知
+                      const notifyMessage = `✅ 主任务对话完成\n\n任务: ${file.replace('.md', '')}\n时间: ${new Date().toLocaleString("zh-CN")}`;
+                      exec(
+                        `openclaw message send --channel "${taskChannel}" --target "${notifyTarget}" --message "${notifyMessage.replace(/\n/g, '\\n')}"`,
+                        { timeout: 10000 }
+                      ).catch(e => {
+                        api.logger.error?.(`[task-monitor] Failed to send completion notification: ${e}`);
+                      });
+                      
                       break;
                     }
                   }
@@ -759,13 +897,6 @@ const plugin = {
               } catch (error) {
                 api.logger.error?.(`[task-monitor] Failed to update task status: ${error}`);
               }
-              
-              // 发送完成通知
-              await alertManager?.sendAlert(
-                `main_turn_${evt.runId || Date.now()}`,
-                `✅ 主任务对话完成\n\nSession: ${evt.sessionKey}\n时间: ${new Date().toLocaleString("zh-CN")}`,
-                "main_turn"
-              );
             }
           }
           

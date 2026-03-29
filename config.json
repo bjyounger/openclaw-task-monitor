@@ -1,15 +1,13 @@
 {
   "$schema": "./config.schema.json",
   "version": "1.0.0",
-  
   "monitoring": {
-    "subtaskTimeout": 1800000,
-    "taskChainTimeout": 2700000,
-    "stalledPendingThreshold": 1800000,
-    "stalledRunningThreshold": 600000,
+    "subtaskTimeout": 3600000,
+    "taskChainTimeout": 5400000,
+    "stalledPendingThreshold": 3600000,
+    "stalledRunningThreshold": 1800000,
     "mainTaskTimeout": 7200000
   },
-  
   "retry": {
     "maxRetries": 2,
     "checkInterval": 10000,
@@ -17,16 +15,14 @@
     "backoffMultiplier": 2,
     "initialDelay": 60000
   },
-  
   "progress": {
     "enabled": true,
     "reportInterval": 60000,
     "timeoutCheckInterval": 60000
   },
-  
   "notification": {
-    "channel": "wecom",
-    "target": "wecom-agent:YangKe",
+    "channel": "telegram",
+    "target": "8665573247",
     "enabled": true,
     "throttle": 3000,
     "maxMessageLength": 200,
@@ -39,26 +35,24 @@
       "subtaskSpawned": true,
       "subtaskCompleted": true,
       "subtaskFailed": true,
-      "subtaskTimeout": true,
-      "mainTaskCompleted": true,
-      "taskChainTimeout": true,
+      "subtaskTimeout": false,
+      "mainTaskCompleted": false,
+      "taskChainTimeout": false,
       "stalledTask": true,
-      "progress": true,
-      "retry": true
+      "progress": false,
+      "retry": true,
+      "mainCompleted": false
     }
   },
-  
   "messageQueue": {
     "maxQueueSize": 100,
     "maxRetries": 3,
     "retryInterval": 5000
   },
-  
   "storage": {
     "stateDir": "~/.openclaw/extensions/task-monitor/state",
     "tasksDir": "~/.openclaw/workspace/memory/tasks"
   },
-  
   "logging": {
     "level": "info"
   }
