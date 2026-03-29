@@ -2,9 +2,7 @@ import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import { emptyPluginConfigSchema } from "openclaw/plugin-sdk";
 import * as path from "path";
 import * as fs from "fs";
-import { spawn, exec as execCallback } from "child_process";
-import { promisify } from "util";
-const exec = promisify(execCallback);
+import { spawn, exec as execCallback, execSync } from "child_process";
 import * as readline from "readline";
 import { 
   StateManager, 
@@ -600,15 +598,17 @@ const plugin = {
                   // 检查是否已发送过（内存缓存 + 文件记录）
                   if (alertManager?.shouldAlert(alertId, "main_completed")) {
                     const notifyMessage = `✅ 主任务完成\n\n任务: ${taskName}\n时间: ${new Date().toLocaleString("zh-CN")}`;
-                    exec(
-                      `openclaw message send --channel "${taskChannel}" --target "${notifyTarget}" --message "${notifyMessage.replace(/\n/g, '\\n')}"`,
-                      { timeout: 10000 }
-                    ).then(() => {
+                    try {
+                      execSync(
+                        `openclaw message send --channel "${taskChannel}" --target "${notifyTarget}" --message "${notifyMessage.replace(/\n/g, '\\n')}"`,
+                        { timeout: 15000, stdio: 'pipe' }
+                      );
                       // 记录已发送
                       alertManager?.recordAlert(alertId, "main_completed");
-                    }).catch(e => {
+                      api.logger.info?.(`[task-monitor] ✅ Notification sent to ${taskChannel}: ${notifyTarget}`);
+                    } catch (e) {
                       api.logger.error?.(`[task-monitor] Failed to send completion notification: ${e}`);
-                    });
+                    }
                   } else {
                     api.logger.debug?.(`[task-monitor] Alert already sent for ${alertId}, skipping`);
                   }
@@ -884,12 +884,15 @@ const plugin = {
                       
                       // 直接调用 message 命令发送通知
                       const notifyMessage = `✅ 主任务对话完成\n\n任务: ${file.replace('.md', '')}\n时间: ${new Date().toLocaleString("zh-CN")}`;
-                      exec(
-                        `openclaw message send --channel "${taskChannel}" --target "${notifyTarget}" --message "${notifyMessage.replace(/\n/g, '\\n')}"`,
-                        { timeout: 10000 }
-                      ).catch(e => {
+                      try {
+                        execSync(
+                          `openclaw message send --channel "${taskChannel}" --target "${notifyTarget}" --message "${notifyMessage.replace(/\n/g, '\\n')}"`,
+                          { timeout: 15000, stdio: 'pipe' }
+                        );
+                        api.logger.info?.(`[task-monitor] ✅ Notification sent to ${taskChannel}: ${notifyTarget}`);
+                      } catch (e) {
                         api.logger.error?.(`[task-monitor] Failed to send completion notification: ${e}`);
-                      });
+                      }
                       
                       break;
                     }
