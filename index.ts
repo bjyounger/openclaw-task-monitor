@@ -592,8 +592,16 @@ const plugin = {
                   const taskChannel = channelMatch ? channelMatch[1] : config.notification.channel;
                   const taskSenderId = senderIdMatch ? senderIdMatch[1] : config.notification.target;
                   
-                  // 构建动态通知目标
-                  const notifyTarget = taskChannel === "telegram" ? taskSenderId : `${taskChannel}:${taskSenderId}`;
+                  // 构建动态通知目标（处理 unknown 和 cron 任务）
+                  let notifyTarget: string;
+                  if (taskSenderId === "unknown" || !taskSenderId) {
+                    // cron 任务或未知发送者，使用默认配置
+                    notifyTarget = config.notification.target;
+                  } else if (taskChannel === "telegram") {
+                    notifyTarget = taskSenderId;
+                  } else {
+                    notifyTarget = `${taskChannel}:${taskSenderId}`;
+                  }
                   
                   api.logger.info?.(`[task-monitor] Sending completion notification to ${taskChannel}: ${notifyTarget}`);
                   
@@ -878,8 +886,16 @@ const plugin = {
                       const taskChannel = channelMatch ? channelMatch[1] : config.notification.channel;
                       const taskSenderId = senderIdMatch ? senderIdMatch[1] : config.notification.target;
                       
-                      // 构建动态通知目标
-                      const notifyTarget = taskChannel === "telegram" ? taskSenderId : `${taskChannel}:${taskSenderId}`;
+                      // 构建动态通知目标（处理 unknown 和 cron 任务）
+                      let notifyTarget: string;
+                      if (taskSenderId === "unknown" || !taskSenderId) {
+                        // cron 任务或未知发送者，使用默认配置
+                        notifyTarget = config.notification.target;
+                      } else if (taskChannel === "telegram") {
+                        notifyTarget = taskSenderId;
+                      } else {
+                        notifyTarget = `${taskChannel}:${taskSenderId}`;
+                      }
                       
                       api.logger.info?.(`[task-monitor] Sending completion notification to ${taskChannel}: ${notifyTarget}`);
                       
