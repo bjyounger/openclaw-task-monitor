@@ -73,5 +73,40 @@
     "taskId": "call_93a8d4b56ab94f1eada13a0b",
     "alertType": "timeout",
     "timestamp": 1774832975191
+  },
+  {
+    "taskId": "interrupt_activity_timeout_undefined",
+    "alertType": "interrupt_activity_timeout",
+    "timestamp": 1774834336967
+  },
+  {
+    "taskId": "interrupt_activity_timeout_868d2260-f77b-4513-b962-d0d21bed645f",
+    "alertType": "interrupt_activity_timeout",
+    "timestamp": 1774834341113
+  },
+  {
+    "taskId": "interrupt_activity_timeout_b15f38e7-94c6-4dbc-a326-7c70afab8ed8",
+    "alertType": "interrupt_activity_timeout",
+    "timestamp": 1774841394193
+  },
+  {
+    "taskId": "interrupt_activity_timeout_9044fe10-99e7-4cfb-9d62-86fd57d9ace2",
+    "alertType": "interrupt_activity_timeout",
+    "timestamp": 1774839684514
+  },
+  {
+    "taskId": "interrupt_activity_timeout_baad4c4f-8a48-4208-94a3-5caa9d601b46",
+    "alertType": "interrupt_activity_timeout",
+    "timestamp": 1774841284394
+  },
+  {
+    "taskId": "interrupt_activity_timeout_5a993e1b-ff84-4856-872e-95d9076eeade",
+    "alertType": "interrupt_activity_timeout",
+    "timestamp": 1774840678409
+  },
+  {
+    "taskId": "interrupt_activity_timeout_b9a8e02e-b74b-4538-b6c7-8d8353592eee",
+    "alertType": "interrupt_activity_timeout",
+    "timestamp": 1774840123958
   }
 ]

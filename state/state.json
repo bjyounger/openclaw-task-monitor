@@ -15127,20 +15127,1009 @@
     {
       "id": "call_709a4ee46d3c440ca0334f1c",
       "type": "exec",
-      "status": "running",
+      "status": "completed",
       "timeoutMs": 30000,
       "parentTaskId": "a9f4d22b-37ae-44cf-b2ad-d4e36ee2c069",
       "metadata": {
         "command": "cd /root/.openclaw/extensions/task-monitor && \\\necho \"=== 检查修改的文件 ===\" && \\\ngit status && \\\necho \"\" && \\\necho \"=== 提交更改 ===\" && \\\ngit add -A && \\\ngit commit -m \"feat: add session_start/session_end hooks and trackSessionStart/trackSessionEnd methods\n\n- Add session_start and session_end hook registration in index.ts\n- Add trackSessionStart() and trackSessionEnd() methods in activity-tracker.ts\n- Fix missing hooks warning in health checker\n- Clean up stale session tracking on session end\"",
-        "toolName": "exec"
+        "duration": 441
       },
       "startTime": 1774834199177,
       "lastHeartbeat": 1774834199177,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834199631,
+          "outcome": "ok",
+          "duration": 454
+        }
+      ]
+    },
+    {
+      "id": "call_0ef92f2cf4e84af09e5a9b09",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "a9f4d22b-37ae-44cf-b2ad-d4e36ee2c069",
+      "metadata": {
+        "command": "cd /root/.openclaw/extensions/task-monitor && \\\necho \"=== 推送到 GitHub ===\" && \\\ngit push origin main && \\\necho \"\" && \\\necho \"=== 推送成功 ===\" && \\\ngit log --oneline -3",
+        "duration": 1851
+      },
+      "startTime": 1774834204342,
+      "lastHeartbeat": 1774834204342,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834206204,
+          "outcome": "ok",
+          "duration": 1862
+        }
+      ]
+    },
+    {
+      "id": "call_cd2a92d7f67b4f07a0b36718",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "a9f4d22b-37ae-44cf-b2ad-d4e36ee2c069",
+      "metadata": {
+        "command": "echo \"=== 重启 Gateway 使钩子生效 ===\" && \\\nsystemctl restart openclaw-gateway && \\\nsleep 3 && \\\necho \"\" && \\\necho \"=== 检查钩子注册状态 ===\" && \\\njournalctl -u openclaw-gateway --no-pager -n 50 --since \"10 seconds ago\" | grep -i \"hook\\|session_start\\|session_end\" | head -10",
+        "duration": 370
+      },
+      "startTime": 1774834218493,
+      "lastHeartbeat": 1774834218493,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834218874,
+          "outcome": "ok",
+          "duration": 381
+        }
+      ]
+    },
+    {
+      "id": "call_88dcf40b9a624e6a8a06e230",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "ed0383d9-7c9c-41c6-a3bc-24cdbfcabba5",
+      "metadata": {
+        "command": "openclaw --version && which openclaw",
+        "duration": 1170
+      },
+      "startTime": 1774834373601,
+      "lastHeartbeat": 1774834373601,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834374773,
+          "outcome": "ok",
+          "duration": 1172
+        }
+      ]
+    },
+    {
+      "id": "call_e665c2c5ba884f98a271b35f",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "ed0383d9-7c9c-41c6-a3bc-24cdbfcabba5",
+      "metadata": {
+        "command": "ls -la /root/.local/share/pnpm/global/5/.pnpm/ | grep openclaw",
+        "duration": 1199
+      },
+      "startTime": 1774834373650,
+      "lastHeartbeat": 1774834373650,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834374802,
+          "outcome": "ok",
+          "duration": 1152
+        }
+      ]
+    },
+    {
+      "id": "call_568f80313a7b48dda1f19197",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "ed0383d9-7c9c-41c6-a3bc-24cdbfcabba5",
+      "metadata": {
+        "command": "ls -la ~/.openclaw/extensions/task-monitor/ 2>/dev/null || echo \"task-monitor not found in extensions\"",
+        "duration": 1222
+      },
+      "startTime": 1774834373680,
+      "lastHeartbeat": 1774834373680,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834374826,
+          "outcome": "ok",
+          "duration": 1146
+        }
+      ]
+    },
+    {
+      "id": "call_4867943d77db42b6bd39dd8e",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "ed0383d9-7c9c-41c6-a3bc-24cdbfcabba5",
+      "metadata": {
+        "command": "npm view openclaw version",
+        "duration": 1904
+      },
+      "startTime": 1774834384107,
+      "lastHeartbeat": 1774834384107,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834386020,
+          "outcome": "ok",
+          "duration": 1913
+        }
+      ]
+    },
+    {
+      "id": "call_f0cb1dc5b490432f8d2136e5",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "ed0383d9-7c9c-41c6-a3bc-24cdbfcabba5",
+      "metadata": {
+        "command": "cd ~/.openclaw/extensions/task-monitor && git log --oneline -5",
+        "duration": 1933
+      },
+      "startTime": 1774834384160,
+      "lastHeartbeat": 1774834384160,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834386055,
+          "outcome": "ok",
+          "duration": 1895
+        }
+      ]
+    },
+    {
+      "id": "call_c7df68027da34624afbb02e5",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "ed0383d9-7c9c-41c6-a3bc-24cdbfcabba5",
+      "metadata": {
+        "command": "pnpm i -g openclaw@latest",
+        "duration": 10045
+      },
+      "startTime": 1774834393317,
+      "lastHeartbeat": 1774834393317,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834403376,
+          "outcome": "ok",
+          "duration": 10059
+        }
+      ]
+    },
+    {
+      "id": "call_2f03be2a23e041ea83f7260e",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "ed0383d9-7c9c-41c6-a3bc-24cdbfcabba5",
+      "metadata": {
+        "command": "openclaw --version",
+        "duration": 600
+      },
+      "startTime": 1774834440211,
+      "lastHeartbeat": 1774834440211,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834440819,
+          "outcome": "ok",
+          "duration": 608
+        }
+      ]
+    },
+    {
+      "id": "call_ea97d45e940f415a9f85cb8e",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "ed0383d9-7c9c-41c6-a3bc-24cdbfcabba5",
+      "metadata": {
+        "command": "ls /root/.local/share/pnpm/global/5/.pnpm/ | grep openclaw@2026",
+        "duration": 626
+      },
+      "startTime": 1774834440265,
+      "lastHeartbeat": 1774834440265,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834440845,
+          "outcome": "ok",
+          "duration": 580
+        }
+      ]
+    },
+    {
+      "id": "call_d249534a2f204409ae738e70",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "ed0383d9-7c9c-41c6-a3bc-24cdbfcabba5",
+      "metadata": {
+        "command": "cat /root/.local/share/pnpm/global/5/.pnpm/openclaw@2026.3.28_@napi-rs+canvas@0.1.97/node_modules/openclaw/dist/plugin-sdk.d.ts 2>/dev/null | head -200",
+        "duration": 434
+      },
+      "startTime": 1774834452490,
+      "lastHeartbeat": 1774834452490,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834452940,
+          "outcome": "ok",
+          "duration": 450
+        }
+      ]
+    },
+    {
+      "id": "call_59c757dcdaed4320b95a247a",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "ed0383d9-7c9c-41c6-a3bc-24cdbfcabba5",
+      "metadata": {
+        "command": "diff -u /root/.local/share/pnpm/global/5/.pnpm/openclaw@2026.3.24_@napi-rs+canvas@0.1.97/node_modules/openclaw/dist/plugin-sdk.d.ts /root/.local/share/pnpm/global/5/.pnpm/openclaw@2026.3.28_@napi-rs+canvas@0.1.97/node_modules/openclaw/dist/plugin-sdk.d.ts 2>/dev/null | head -100",
+        "duration": 469
+      },
+      "startTime": 1774834452544,
+      "lastHeartbeat": 1774834452544,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834452969,
+          "outcome": "ok",
+          "duration": 425
+        }
+      ]
+    },
+    {
+      "id": "call_b328dfc8def148b696943631",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "ed0383d9-7c9c-41c6-a3bc-24cdbfcabba5",
+      "metadata": {
+        "command": "find /root/.local/share/pnpm/global/5/.pnpm/openclaw@2026.3.28* -name \"*.d.ts\" -type f 2>/dev/null | head -20",
+        "duration": 404
+      },
+      "startTime": 1774834461299,
+      "lastHeartbeat": 1774834461299,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834461720,
+          "outcome": "ok",
+          "duration": 421
+        }
+      ]
+    },
+    {
+      "id": "call_2dcf9fa1d6da4e5085fb14bf",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "ed0383d9-7c9c-41c6-a3bc-24cdbfcabba5",
+      "metadata": {
+        "command": "ls -la /root/.local/share/pnpm/global/5/.pnpm/openclaw@2026.3.28_@napi-rs+canvas@0.1.97/node_modules/openclaw/dist/ 2>/dev/null | head -20",
+        "duration": 476
+      },
+      "startTime": 1774834461350,
+      "lastHeartbeat": 1774834461350,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834461783,
+          "outcome": "ok",
+          "duration": 433
+        }
+      ]
+    },
+    {
+      "id": "call_90c566ae6bc14a948f4feab0",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "ed0383d9-7c9c-41c6-a3bc-24cdbfcabba5",
+      "metadata": {
+        "command": "cat /root/.local/share/pnpm/global/5/.pnpm/openclaw@2026.3.28_@napi-rs+canvas@0.1.97/node_modules/openclaw/dist/plugin-sdk/src/index.d.ts 2>/dev/null | head -150",
+        "duration": 795
+      },
+      "startTime": 1774834472376,
+      "lastHeartbeat": 1774834472376,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834473190,
+          "outcome": "ok",
+          "duration": 814
+        }
+      ]
+    },
+    {
+      "id": "call_479285f2aeec4ce3a5d95a5b",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "ed0383d9-7c9c-41c6-a3bc-24cdbfcabba5",
+      "metadata": {
+        "command": "cat /root/.local/share/pnpm/global/5/.pnpm/openclaw@2026.3.24_@napi-rs+canvas@0.1.97/node_modules/openclaw/dist/plugin-sdk/src/index.d.ts 2>/dev/null | head -150",
+        "duration": 841
+      },
+      "startTime": 1774834472445,
+      "lastHeartbeat": 1774834472445,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834473227,
+          "outcome": "ok",
+          "duration": 782
+        }
+      ]
+    },
+    {
+      "id": "call_049f4f038342491bb5745368",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "ed0383d9-7c9c-41c6-a3bc-24cdbfcabba5",
+      "metadata": {
+        "command": "grep -r \"OpenClawPluginApi\" /root/.local/share/pnpm/global/5/.pnpm/openclaw@2026.3.28*/node_modules/openclaw/dist/*.d.ts 2>/dev/null | head -5",
+        "duration": 436
+      },
+      "startTime": 1774834491203,
+      "lastHeartbeat": 1774834491203,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834491660,
+          "outcome": "ok",
+          "duration": 457
+        }
+      ]
+    },
+    {
+      "id": "call_94093d0d02ad42a49695fc60",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "ed0383d9-7c9c-41c6-a3bc-24cdbfcabba5",
+      "metadata": {
+        "command": "find /root/.local/share/pnpm/global/5/.pnpm/openclaw@2026.3.28* -name \"*.d.ts\" -exec grep -l \"OpenClawPluginApi\" {} \\; 2>/dev/null | head -5",
+        "duration": 10098
+      },
+      "startTime": 1774834491257,
+      "lastHeartbeat": 1774834491257,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834501326,
+          "outcome": "ok",
+          "duration": 10069
+        }
+      ]
+    },
+    {
+      "id": "call_543b43270213414db691a15b",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "ed0383d9-7c9c-41c6-a3bc-24cdbfcabba5",
+      "metadata": {
+        "command": "cat /root/.local/share/pnpm/global/5/.pnpm/openclaw@2026.3.28_@napi-rs+canvas@0.1.97/node_modules/openclaw/dist/plugin-sdk/src/plugins/types.d.ts",
+        "duration": 644
+      },
+      "startTime": 1774834520474,
+      "lastHeartbeat": 1774834520474,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834521128,
+          "outcome": "ok",
+          "duration": 654
+        }
+      ]
+    },
+    {
+      "id": "call_5e8b933335694d28bbf4fd38",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "ed0383d9-7c9c-41c6-a3bc-24cdbfcabba5",
+      "metadata": {
+        "command": "grep -n \"onAgentEvent\\|sendMessage\\|registerHook\\|api\\.\" ~/.openclaw/extensions/task-monitor/index.ts | head -50",
+        "duration": 446
+      },
+      "startTime": 1774834538365,
+      "lastHeartbeat": 1774834538365,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834538826,
+          "outcome": "ok",
+          "duration": 461
+        }
+      ]
+    },
+    {
+      "id": "call_9b435aaa718a4517b810517e",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "ed0383d9-7c9c-41c6-a3bc-24cdbfcabba5",
+      "metadata": {
+        "command": "grep -n \"session_start\\|session_end\" ~/.openclaw/extensions/task-monitor/index.ts",
+        "duration": 485
+      },
+      "startTime": 1774834538417,
+      "lastHeartbeat": 1774834538417,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834538860,
+          "outcome": "ok",
+          "duration": 443
+        }
+      ]
+    },
+    {
+      "id": "call_af0069b51c6c4201964561ec",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "ed0383d9-7c9c-41c6-a3bc-24cdbfcabba5",
+      "metadata": {
+        "command": "grep -n \"onAgentEvent\\|runtime\\.\" ~/.openclaw/extensions/task-monitor/index.ts | head -30",
+        "duration": 282
+      },
+      "startTime": 1774834549329,
+      "lastHeartbeat": 1774834549329,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834549618,
+          "outcome": "ok",
+          "duration": 289
+        }
+      ]
+    },
+    {
+      "id": "call_305fd8b004e64718a34ab495",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "ed0383d9-7c9c-41c6-a3bc-24cdbfcabba5",
+      "metadata": {
+        "command": "cat /root/.local/share/pnpm/global/5/.pnpm/openclaw@2026.3.28_@napi-rs+canvas@0.1.97/node_modules/openclaw/dist/plugin-sdk/src/plugins/runtime/types.d.ts 2>/dev/null | head -100",
+        "duration": 285
+      },
+      "startTime": 1774834559804,
+      "lastHeartbeat": 1774834559804,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834560098,
+          "outcome": "ok",
+          "duration": 294
+        }
+      ]
+    },
+    {
+      "id": "call_1f7baa7478f44bf9b4051df6",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "ed0383d9-7c9c-41c6-a3bc-24cdbfcabba5",
+      "metadata": {
+        "command": "cat /root/.local/share/pnpm/global/5/.pnpm/openclaw@2026.3.28_@napi-rs+canvas@0.1.97/node_modules/openclaw/dist/plugin-sdk/src/plugins/runtime/types-core.d.ts 2>/dev/null",
+        "duration": 295
+      },
+      "startTime": 1774834568631,
+      "lastHeartbeat": 1774834568631,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834568936,
+          "outcome": "ok",
+          "duration": 305
+        }
+      ]
+    },
+    {
+      "id": "call_6e60bb9b12f74d4c8971f6e6",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "ed0383d9-7c9c-41c6-a3bc-24cdbfcabba5",
+      "metadata": {
+        "command": "systemctl restart openclaw-gateway && sleep 3 && systemctl status openclaw-gateway --no-pager | head -20",
+        "duration": 373
+      },
+      "startTime": 1774834581835,
+      "lastHeartbeat": 1774834581835,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834582220,
+          "outcome": "ok",
+          "duration": 385
+        }
+      ]
+    },
+    {
+      "id": "call_61b50ff9e221469e916bd03b",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "b15f38e7-94c6-4dbc-a326-7c70afab8ed8",
+      "metadata": {
+        "command": "cd /root/.openclaw/extensions/task-monitor && \\\necho \"=== 检查 Git 状态 ===\" && \\\ngit status && \\\necho \"\" && \\\necho \"=== 最近提交 ===\" && \\\ngit log --oneline -3",
+        "duration": 281
+      },
+      "startTime": 1774834721664,
+      "lastHeartbeat": 1774834721664,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834721958,
+          "outcome": "ok",
+          "duration": 294
+        }
+      ]
+    },
+    {
+      "id": "call_33bd6016c6c748e9804ef8ea",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "9044fe10-99e7-4cfb-9d62-86fd57d9ace2",
+      "metadata": {
+        "command": "echo \"=== 检查该任务的处理日志 ===\" && \\\njournalctl -u openclaw-gateway --no-pager --since \"09:39:00\" | grep -i \"b15f38e7\\|interrupt\\|retry\\|recovery\" | head -20 && \\\necho \"\" && \\\necho \"=== 检查告警记录 ===\" && \\\ncat /root/.openclaw/extensions/task-monitor/state/alert-records.json | jq '.[] | select(.runId | contains(\"b15f38e7\")) | {alertType, runId, timestamp}' 2>/dev/null || echo \"未找到\" && \\\necho \"\" && \\\necho \"=== 检查是否有重试记录 ===\" && \\\ncat /root/.openclaw/extensions/task-monitor/state/scheduled-retries.json | jq '.[] | select(.runId | contains(\"b15f38e7\"))' 2>/dev/null || echo \"无重试记录\"",
+        "duration": 315
+      },
+      "startTime": 1774834960324,
+      "lastHeartbeat": 1774834960324,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834960651,
+          "outcome": "ok",
+          "duration": 327
+        }
+      ]
+    },
+    {
+      "id": "call_2f5e42b5fb5548468672b0fa",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "9044fe10-99e7-4cfb-9d62-86fd57d9ace2",
+      "metadata": {
+        "command": "echo \"=== 检查任务状态管理器 ===\" && \\\ncat /root/.openclaw/extensions/task-monitor/state/state.json | jq '.' | head -30 && \\\necho \"\" && \\\necho \"=== 检查 running 目录 ===\" && \\\nls -la /root/.openclaw/workspace/memory/tasks/running/ && \\\necho \"\" && \\\necho \"=== 检查 interrupt-handler 的处理逻辑 ===\" && \\\ngrep -A 20 \"handleInterrupt\" /root/.openclaw/extensions/task-monitor/lib/interrupt-handler.ts | head -30",
+        "duration": 288
+      },
+      "startTime": 1774834970501,
+      "lastHeartbeat": 1774834970501,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774834970800,
+          "outcome": "ok",
+          "duration": 299
+        }
+      ]
+    },
+    {
+      "id": "call_7aa6c2125f2b437dbf5dae35",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "9044fe10-99e7-4cfb-9d62-86fd57d9ace2",
+      "metadata": {
+        "command": "echo \"=== 检查该 runId 在 stateManager 中是否存在 ===\" && \\\ncat /root/.openclaw/extensions/task-monitor/state/state.json | jq --arg runId \"b15f38e7\" '.tasks[] | select(.id | contains($runId))' && \\\necho \"\" && \\\necho \"=== 检查最近的 activity-tracker 日志 ===\" && \\\njournalctl -u openclaw-gateway --no-pager --since \"09:39:00\" | grep -i \"trackSessionStart\\|Session started\\|b15f38e7\" | head -10",
+        "duration": 300
+      },
+      "startTime": 1774835005772,
+      "lastHeartbeat": 1774835005772,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774835006088,
+          "outcome": "ok",
+          "duration": 316
+        }
+      ]
+    },
+    {
+      "id": "call_43351423f693482695235a03",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "9044fe10-99e7-4cfb-9d62-86fd57d9ace2",
+      "metadata": {
+        "command": "echo \"=== 检查 runId 来源 ===\" && \\\njournalctl -u openclaw-gateway --no-pager --since \"09:38:30\" | grep -i \"b15f38e7\\|Session started\\|trackSessionStart\\|activity.*created\" | head -10 && \\\necho \"\" && \\\necho \"=== 检查 onAgentEvent 是否追踪了这个会话 ===\" && \\\njournalctl -u openclaw-gateway --no-pager --since \"09:38:30\" --until \"09:39:00\" | grep -i \"onAgentEvent\\|lifecycle\\|start\\|announce\" | head -15",
+        "duration": 311
+      },
+      "startTime": 1774835023799,
+      "lastHeartbeat": 1774835023799,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774835024124,
+          "outcome": "ok",
+          "duration": 325
+        }
+      ]
+    },
+    {
+      "id": "call_d776027dfcf44ae6a41d0813",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "9044fe10-99e7-4cfb-9d62-86fd57d9ace2",
+      "metadata": {
+        "command": "echo \"=== 检查 activity-tracker 如何追踪会话 ===\" && \\\ngrep -n \"lifecycle\\|turn_started\\|start\\|createActivity\" /root/.openclaw/extensions/task-monitor/lib/activity-tracker.ts | head -20 && \\\necho \"\" && \\\necho \"=== 检查 onAgentEvent 处理 ===\" && \\\ngrep -B 5 -A 30 \"onAgentEvent\" /root/.openclaw/extensions/task-monitor/index.ts | head -50",
+        "duration": 278
+      },
+      "startTime": 1774835048814,
+      "lastHeartbeat": 1774835048814,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774835049112,
+          "outcome": "ok",
+          "duration": 298
+        }
+      ]
+    },
+    {
+      "id": "call_a9f57bce588d43a6817cf1ba",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "9044fe10-99e7-4cfb-9d62-86fd57d9ace2",
+      "metadata": {
+        "command": "grep -n \"lifecycle\\|turn_started\\|phase.*start\\|createActivity\" /root/.openclaw/extensions/task-monitor/index.ts | head -20",
+        "duration": 657
+      },
+      "startTime": 1774835067190,
+      "lastHeartbeat": 1774835067190,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774835067860,
+          "outcome": "ok",
+          "duration": 670
+        }
+      ]
+    },
+    {
+      "id": "call_9bc4a8c94dac4e789fb20634",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "9044fe10-99e7-4cfb-9d62-86fd57d9ace2",
+      "metadata": {
+        "command": "echo \"=== 检查当前配置 ===\" && \\\ncat /root/.openclaw/extensions/task-monitor/config.json | jq '{activityDetection: .activityDetection}'",
+        "duration": 277
+      },
+      "startTime": 1774835109272,
+      "lastHeartbeat": 1774835109272,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774835109563,
+          "outcome": "ok",
+          "duration": 291
+        }
+      ]
+    },
+    {
+      "id": "call_2b2ee6d67dfd489ea1939eeb",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "baad4c4f-8a48-4208-94a3-5caa9d601b46",
+      "metadata": {
+        "command": "ls -la /root/.openclaw/workspace/memory/tasks/running/ 2>/dev/null || echo \"目录为空或不存在\"",
+        "duration": 284
+      },
+      "startTime": 1774836399341,
+      "lastHeartbeat": 1774836399341,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774836399639,
+          "outcome": "ok",
+          "duration": 298
+        }
+      ]
+    },
+    {
+      "id": "call_7648b92366444c9ab81eb827",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "5a993e1b-ff84-4856-872e-95d9076eeade",
+      "metadata": {
+        "command": "ls -la /root/.openclaw/workspace/memory/tasks/running/ 2>/dev/null || echo \"目录为空或不存在\"",
+        "duration": 281
+      },
+      "startTime": 1774838195512,
+      "lastHeartbeat": 1774838195512,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774838195806,
+          "outcome": "ok",
+          "duration": 294
+        }
+      ]
+    },
+    {
+      "id": "call_4b7141af321343d8b7f61552",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "b9a8e02e-b74b-4538-b6c7-8d8353592eee",
+      "metadata": {
+        "command": "ls -la /root/.openclaw/workspace/memory/tasks/running/ 2>/dev/null || echo \"目录为空或不存在\"",
+        "duration": 285
+      },
+      "startTime": 1774840034465,
+      "lastHeartbeat": 1774840034465,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774840034764,
+          "outcome": "ok",
+          "duration": 299
+        }
+      ]
+    },
+    {
+      "id": "call_5314d38909ca4f0a8ec6fdaf",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "c587764a-8e32-40fd-abb9-45687e78766e",
+      "metadata": {
+        "command": "systemctl restart openclaw-gateway",
+        "duration": 371
+      },
+      "startTime": 1774841396519,
+      "lastHeartbeat": 1774841396519,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774841396901,
+          "outcome": "ok",
+          "duration": 382
+        }
+      ]
+    },
+    {
+      "id": "call_0b7bf8527a1944eb8325300e",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "64191c46-a0d0-4010-b7bd-f14d89a75ca4",
+      "metadata": {
+        "command": "echo \"=== 检查这些 runId 的状态 ===\" && \\\necho \"b15f38e7-94c6-4dbc-a326-7c70afab8ed8:\" && \\\njournalctl -u openclaw-gateway --no-pager --since \"09:38:00\" | grep -i \"b15f38e7\" | grep -i \"tool_call\\|stream\\|lifecycle\" | tail -5 && \\\necho \"\" && \\\necho \"9044fe10-99e7-4cfb-9d62-86fd57d9ace2:\" && \\\njournalctl -u openclaw-gateway --no-pager --since \"09:45:00\" | grep -i \"9044fe10\" | grep -i \"tool_call\\|stream\\|lifecycle\" | tail -5 && \\\necho \"\" && \\\necho \"=== 检查告警去重逻辑 ===\" && \\\ncat /root/.openclaw/extensions/task-monitor/state/alert-records.json | jq 'length' && \\\ncat /root/.openclaw/extensions/task-monitor/state/alert-records.json | jq '.[] | select(.alertType == \"interrupt_activity_timeout\") | {alertId, timestamp}' | tail -20",
+        "duration": 506
+      },
+      "startTime": 1774841860858,
+      "lastHeartbeat": 1774841860858,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774841861375,
+          "outcome": "ok",
+          "duration": 517
+        }
+      ]
+    },
+    {
+      "id": "call_b4e2d0f8b0b845e5ac7d618f",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "64191c46-a0d0-4010-b7bd-f14d89a75ca4",
+      "metadata": {
+        "command": "echo \"=== 检查告警记录文件 ===\" && \\\ncat /root/.openclaw/extensions/task-monitor/state/alert-records.json | jq '.[0:3]' && \\\necho \"\" && \\\necho \"=== 检查 activityMap 中的活跃任务 ===\" && \\\njournalctl -u openclaw-gateway --no-pager --since \"11:35:00\" | grep -i \"activity.*timeout\\|activityMap\\|getAllActivities\" | head -10 && \\\necho \"\" && \\\necho \"=== 检查当前活跃的会话 ===\" && \\\nopenclaw sessions list --active 2>/dev/null || echo \"命令不可用\"",
+        "duration": 3654
+      },
+      "startTime": 1774841895771,
+      "lastHeartbeat": 1774841895771,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774841899436,
+          "outcome": "ok",
+          "duration": 3665
+        }
+      ]
+    },
+    {
+      "id": "call_ca8ec199a9ca43a9b1980e15",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "64191c46-a0d0-4010-b7bd-f14d89a75ca4",
+      "metadata": {
+        "command": "echo \"=== 检查完整的告警记录 ===\" && \\\ncat /root/.openclaw/extensions/task-monitor/state/alert-records.json | jq '.' && \\\necho \"\" && \\\necho \"=== 检查 AlertManager 的去重逻辑 ===\" && \\\ngrep -A 20 \"shouldAlert\\|isInCooldown\" /root/.openclaw/extensions/task-monitor/lib/alert-manager.ts | head -30",
+        "duration": 270
+      },
+      "startTime": 1774841917943,
+      "lastHeartbeat": 1774841917943,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774841918224,
+          "outcome": "ok",
+          "duration": 281
+        }
+      ]
+    },
+    {
+      "id": "call_e6e225e083814d678f572377",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "64191c46-a0d0-4010-b7bd-f14d89a75ca4",
+      "metadata": {
+        "command": "echo \"=== 问题诊断 ===\" && \\\necho \"1. 主任务阈值 60 秒太短，正常对话也可能触发\" && \\\necho \"2. 告警冷却期 30 分钟，但活跃检测每 10 秒一次\" && \\\necho \"3. 同一个 runId 重复发送告警（如 b15f38e7 从 60s 到 6660s）\" && \\\necho \"\" && \\\necho \"=== 立即修复 ===\" && \\\necho \"1. 调整主任务阈值到 5 分钟\" && \\\necho \"2. 清理中断的任务\" && \\\necho \"3. 增加活跃超时告警的去重时间窗口\" && \\\necho \"\" && \\\necho \"修改配置...\" && \\\ncat /root/.openclaw/extensions/task-monitor/config.json | jq '.activityDetection.thresholds.main = 300000' > /tmp/config.json && \\\nmv /tmp/config.json /root/.openclaw/extensions/task-monitor/config.json && \\\necho \"✓ 主任务阈值已调整为 5 分钟\" && \\\necho \"\" && \\\necho \"清理中断任务的告警记录...\"",
+        "duration": 653
+      },
+      "startTime": 1774841941712,
+      "lastHeartbeat": 1774841941712,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774841942375,
+          "outcome": "ok",
+          "duration": 663
+        }
+      ]
+    },
+    {
+      "id": "call_a328ec6dc4f045c5a676046d",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "64191c46-a0d0-4010-b7bd-f14d89a75ca4",
+      "metadata": {
+        "command": "echo \"=== 检查 isInCooldown 实现 ===\" && \\\ngrep -A 10 \"isInCooldown\" /root/.openclaw/extensions/task-monitor/lib/interrupt-handler.ts && \\\necho \"\" && \\\necho \"=== 检查 AlertManager 的冷却期 ===\" && \\\ngrep -n \"COOLDOWN\\|cooldown\" /root/.openclaw/extensions/task-monitor/lib/alert-manager.ts | head -10",
+        "duration": 270
+      },
+      "startTime": 1774841980099,
+      "lastHeartbeat": 1774841980099,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774841980381,
+          "outcome": "ok",
+          "duration": 282
+        }
+      ]
+    },
+    {
+      "id": "call_6c66e613866f45d39e934ebf",
+      "type": "exec",
+      "status": "running",
+      "timeoutMs": 30000,
+      "parentTaskId": "64191c46-a0d0-4010-b7bd-f14d89a75ca4",
+      "metadata": {
+        "command": "cd /root/.openclaw/extensions/task-monitor && \\\necho \"=== 提交更改 ===\" && \\\ngit add -A && \\\ngit commit -m \"fix: prevent repeated activity timeout alerts\n\n- Add activityTimeoutAlerted set to track alerted runIds\n- Remove activity record after alert sent to prevent re-detection\n- Increase main task threshold from 60s to 5min\" && \\\necho \"\" && \\\necho \"=== 推送到 GitHub ===\" && \\\ngit push origin main",
+        "toolName": "exec"
+      },
+      "startTime": 1774842093355,
+      "lastHeartbeat": 1774842093355,
       "retryCount": 0,
       "maxRetries": 2,
       "retryHistory": []
     }
   ],
   "version": "2.0.0",
-  "lastUpdated": 1774834199177
+  "lastUpdated": 1774842093355
 }

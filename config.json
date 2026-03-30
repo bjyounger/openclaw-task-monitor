@@ -60,11 +60,14 @@
     "enabled": true,
     "checkInterval": 10000,
     "thresholds": {
-      "main": 60000,
+      "main": 300000,
       "sub": 180000,
       "acp": 300000
     },
-    "excludeTools": ["read", "web_fetch"],
+    "excludeTools": [
+      "read",
+      "web_fetch"
+    ],
     "waitForStates": {
       "api_response": 300000,
       "user_input": 600000,

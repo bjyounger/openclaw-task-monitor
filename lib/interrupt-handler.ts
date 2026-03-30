@@ -147,6 +147,9 @@ export class InterruptHandler {
   /**
    * 处理中断（统一入口）
    */
+  // 已发送过活跃超时告警的 runId 集合（永久去重）
+  private activityTimeoutAlerted: Set<string> = new Set();
+
   public async handleInterrupt(
     runId: string,
     reason: InterruptReason,
@@ -155,6 +158,15 @@ export class InterruptHandler {
     if (!this.config.enabled) {
       this.api?.logger.debug?.(`[interrupt-handler] Interrupt handling disabled, skipping: ${runId}`);
       return;
+    }
+    
+    // 活跃超时告警：每个 runId 只发送一次
+    if (reason === 'activity_timeout') {
+      if (this.activityTimeoutAlerted.has(runId)) {
+        this.api?.logger.debug?.(`[interrupt-handler] Activity timeout alert already sent for ${runId}, skipping`);
+        return;
+      }
+      this.activityTimeoutAlerted.add(runId);
     }
     
     // 检查告警冷却
@@ -180,6 +192,12 @@ export class InterruptHandler {
     // 5. 尝试恢复
     if (this.config.autoRetryEnabled) {
       await this.attemptRecovery(runId, reason, context);
+    }
+    
+    // 6. 清理已中断的 activity 记录（避免重复检测）
+    if (reason === 'activity_timeout' && context.activity) {
+      // 通知 activity-tracker 删除该记录
+      // 这需要通过回调实现
     }
   }
 

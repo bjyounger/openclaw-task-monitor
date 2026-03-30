@@ -633,6 +633,10 @@ export class ActivityTracker {
           threshold,
         });
       }
+      
+      // 删除已告警的 activity 记录，避免重复检测
+      this.activityMap.delete(runId);
+      this.api?.logger.debug?.(`[activity-tracker] Removed activity record after alert: ${runId}`);
     }
   }
 
