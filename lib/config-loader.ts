@@ -9,6 +9,80 @@ import * as path from "path";
 
 // ==================== 配置接口定义 ====================
 
+/**
+ * 活跃检测配置
+ */
+export interface ActivityDetectionConfig {
+  /** 是否启用 */
+  enabled: boolean;
+  /** 检查间隔（毫秒） */
+  checkInterval: number;
+  /** 活跃超时阈值 */
+  thresholds: {
+    main: number;
+    sub: number;
+    acp: number;
+  };
+  /** 排除的工具 */
+  excludeTools: string[];
+  /** 等待状态默认超时 */
+  waitForStates: {
+    api_response: number;
+    user_input: number;
+    file_lock: number;
+    subagent_wait: number;
+    browser_wait: number;
+  };
+  /** 陈旧记录清理间隔（毫秒） */
+  staleCleanupInterval: number;
+  /** 陈旧记录阈值（毫秒） */
+  staleThreshold: number;
+}
+
+/**
+ * 工具超时配置
+ */
+export interface ToolTimeoutsConfig {
+  /** 是否启用 */
+  enabled: boolean;
+  /** 检查间隔（毫秒） */
+  checkInterval: number;
+  /** 各工具超时时间（毫秒） */
+  timeouts: Record<string, number>;
+}
+
+/**
+ * 健康检查配置
+ */
+export interface HealthCheckConfig {
+  /** 是否启用 */
+  enabled: boolean;
+  /** 检查间隔（毫秒） */
+  checkInterval: number;
+  /** 是否在阻塞时告警 */
+  alertOnBlocked: boolean;
+}
+
+/**
+ * 告警去重配置
+ */
+export interface AlertDeduplicationConfig {
+  /** 是否启用 */
+  enabled: boolean;
+  /** 冷却期（毫秒） */
+  cooldownPeriod: number;
+}
+
+/**
+ * 降级配置
+ */
+export interface DegradationConfig {
+  /** 是否启用 */
+  enabled: boolean;
+  /** 是否降级到仅 Layer 4 */
+  fallbackToLayer4Only: boolean;
+}
+
 export interface TaskMonitorConfig {
   version: string;
   monitoring: {
@@ -57,6 +131,12 @@ export interface TaskMonitorConfig {
   logging: {
     level: string;
   };
+  // 新增配置项
+  activityDetection?: ActivityDetectionConfig;
+  toolTimeouts?: ToolTimeoutsConfig;
+  healthCheck?: HealthCheckConfig;
+  alertDeduplication?: AlertDeduplicationConfig;
+  degradation?: DegradationConfig;
 }
 
 // ==================== 默认配置 ====================
@@ -123,6 +203,62 @@ const DEFAULT_CONFIG: TaskMonitorConfig = {
   
   logging: {
     level: "info",
+  },
+  
+  // 新增：活跃检测配置
+  activityDetection: {
+    enabled: true,
+    checkInterval: 10000,              // 10 秒
+    thresholds: {
+      main: 60000,                     // 主任务 60 秒
+      sub: 180000,                     // 子任务 3 分钟
+      acp: 300000,                     // ACP 会话 5 分钟
+    },
+    excludeTools: ["read", "web_fetch"],
+    waitForStates: {
+      api_response: 300000,            // 5 分钟
+      user_input: 600000,              // 10 分钟
+      file_lock: 60000,                // 1 分钟
+      subagent_wait: 600000,           // 10 分钟
+      browser_wait: 300000,            // 5 分钟
+    },
+    staleCleanupInterval: 3600000,     // 1 小时
+    staleThreshold: 21600000,          // 6 小时
+  },
+  
+  // 新增：工具超时配置
+  toolTimeouts: {
+    enabled: true,
+    checkInterval: 30000,              // 30 秒
+    timeouts: {
+      exec: 300000,                    // 5 分钟
+      http: 120000,                    // 2 分钟
+      read: 30000,                     // 30 秒
+      write: 30000,                    // 30 秒
+      browser: 300000,                 // 5 分钟
+      sessions_spawn: 600000,          // 10 分钟
+      process: 300000,                 // 5 分钟
+      canvas: 300000,                  // 5 分钟
+    },
+  },
+  
+  // 新增：健康检查配置
+  healthCheck: {
+    enabled: true,
+    checkInterval: 300000,             // 5 分钟
+    alertOnBlocked: true,
+  },
+  
+  // 新增：告警去重配置
+  alertDeduplication: {
+    enabled: true,
+    cooldownPeriod: 300000,            // 5 分钟
+  },
+  
+  // 新增：降级配置
+  degradation: {
+    enabled: true,
+    fallbackToLayer4Only: true,
   },
 };
 

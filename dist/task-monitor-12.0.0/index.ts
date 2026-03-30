@@ -2,7 +2,7 @@ import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import { emptyPluginConfigSchema } from "openclaw/plugin-sdk";
 import * as path from "path";
 import * as fs from "fs";
-import { spawn } from "child_process";
+import { spawn, exec as execCallback, execSync } from "child_process";
 import * as readline from "readline";
 import { 
   StateManager, 
@@ -10,9 +10,17 @@ import {
   TaskChainManager, 
   loadConfig,
   messageQueue,
+  ActivityTracker,
+  getActivityTracker,
+  InterruptHandler,
+  getInterruptHandler,
+  HealthChecker,
+  getHealthChecker,
   type TaskState, 
   type ScheduledRetry,
   type TaskMonitorConfig,
+  type ActivityState,
+  type SessionType,
 } from "./lib";
 
 // ==================== Session Key 辅助函数 ====================
@@ -403,14 +411,14 @@ async function sendNotification(alertType: string, message: string): Promise<voi
 const plugin = {
   id: "task-monitor",
   name: "Task Monitor",
-  description: "监控子任务生命周期、自动重试、任务链追踪、进度报告、主任务监控、停滞检测、超时检测（v11 - 配置化）",
+  description: "监控子任务生命周期、自动重试、任务链追踪、进度报告、主任务监控、停滞检测、超时检测、exec进程监控、失败实时上报（v12）",
   configSchema: emptyPluginConfigSchema(),
 
   register(api: OpenClawPluginApi) {
     // ==================== 加载配置 ====================
     const config = loadConfig();
-    console.log(`[task-monitor] Plugin registering (v11, config version: ${config.version})...`);
-    api.logger.info?.(`[task-monitor] Plugin registering (v11, config version: ${config.version})...`);
+    console.log(`[task-monitor] Plugin registering (v12, config version: ${config.version})...`);
+    api.logger.info?.(`[task-monitor] Plugin registering (v12, config version: ${config.version})...`);
 
     // 从配置中提取常用路径
     const TASKS_DIR = config.storage.tasksDir;
@@ -436,6 +444,258 @@ const plugin = {
       api.logger.info?.(`[task-monitor] Message queue config: maxQueueSize=${config.messageQueue.maxQueueSize}, maxRetries=${config.messageQueue.maxRetries}`);
     }
     api.logger.info?.("[task-monitor] Message queue initialized");
+
+    // ==================== 新增：活跃检测初始化 ====================
+    // 初始化活跃追踪器
+    const activityConfig = config.activityDetection || {};
+    const toolTimeoutsConfig = config.toolTimeouts?.timeouts || {};
+    
+    const activityTracker = getActivityTracker(activityConfig, toolTimeoutsConfig);
+    activityTracker.initialize(api);
+    
+    // 初始化中断处理器
+    const interruptConfig = {
+      enabled: config.alertDeduplication?.enabled ?? true,
+      alertCooldownPeriod: config.alertDeduplication?.cooldownPeriod ?? 300000,
+      autoRetryEnabled: config.retry.maxRetries > 0,
+      maxRetries: config.retry.maxRetries,
+      backoffMultiplier: config.retry.backoffMultiplier,
+      initialDelay: config.retry.initialDelay,
+    };
+    
+    const interruptHandler = getInterruptHandler(interruptConfig);
+    interruptHandler.initialize(api, stateManager, alertManager);
+    
+    // 初始化健康检查器
+    const healthConfig = config.healthCheck || {};
+    const healthChecker = getHealthChecker(healthConfig);
+    healthChecker.initialize(api, alertManager, activityTracker);
+    
+    api.logger.info?.("[task-monitor] Activity detection initialized (Layer 1)");
+    
+    // ==================== 新增：钩子注册 ====================
+    // 注册 before_tool_call 钩子
+    try {
+      api.on("before_tool_call", async (event) => {
+        try {
+          // 排除不需要追踪的工具
+          const excludeTools = activityConfig.excludeTools || ['read', 'web_fetch'];
+          if (excludeTools.includes(event.toolName)) return;
+          
+          const runId = event.runId || event.toolCallId;
+          const sessionKey = (event as any).sessionKey || '';
+          
+          // 如果还没有活跃状态，创建一个
+          if (!activityTracker.getActivity(runId)) {
+            const type: SessionType = sessionKey.includes(':subagent:') ? 'sub' : 
+                                      sessionKey.includes(':acp:') ? 'acp' : 'main';
+            activityTracker.createActivity(runId, sessionKey, type);
+          }
+          
+          // 开始工具调用追踪
+          activityTracker.startToolCall(
+            event.toolCallId,
+            event.toolName,
+            runId,
+            event.params as Record<string, unknown>,
+            sessionKey
+          );
+        } catch (e) {
+          api.logger.error?.(`[task-monitor] Error in before_tool_call hook: ${e}`);
+        }
+      });
+      activityTracker.markHookRegistered('before_tool_call');
+      api.logger.debug?.("[task-monitor] Hook registered: before_tool_call");
+    } catch (e) {
+      activityTracker.markHookFailed('before_tool_call', e);
+    }
+    
+    // 注册 after_tool_call 钩子
+    try {
+      api.on("after_tool_call", async (event) => {
+        try {
+          const runId = event.runId || event.toolCallId;
+          const isError = !!event.error;
+          
+          // 结束工具调用追踪
+          activityTracker.endToolCall(event.toolCallId, isError);
+        } catch (e) {
+          api.logger.error?.(`[task-monitor] Error in after_tool_call hook: ${e}`);
+        }
+      });
+      activityTracker.markHookRegistered('after_tool_call');
+      api.logger.debug?.("[task-monitor] Hook registered: after_tool_call");
+    } catch (e) {
+      activityTracker.markHookFailed('after_tool_call', e);
+    }
+    
+    // 注册 session_start 钩子
+    try {
+      api.on("session_start", async (event: any) => {
+        try {
+          const sessionKey = event.sessionKey || event.key;
+          const runId = event.runId || event.id;
+          
+          if (sessionKey && !sessionKey.includes(":subagent:")) {
+            activityTracker.trackSessionStart(runId, sessionKey, 'main');
+            api.logger.debug?.(`[task-monitor] Session started: ${sessionKey}`);
+          }
+        } catch (e) {
+          api.logger.error?.(`[task-monitor] Error in session_start hook: ${e}`);
+        }
+      });
+      activityTracker.markHookRegistered('session_start');
+      api.logger.debug?.("[task-monitor] Hook registered: session_start");
+    } catch (e) {
+      activityTracker.markHookFailed('session_start', e);
+    }
+    
+    // 注册 session_end 钩子
+    try {
+      api.on("session_end", async (event: any) => {
+        try {
+          const sessionKey = event.sessionKey || event.key;
+          const runId = event.runId || event.id;
+          
+          if (sessionKey) {
+            activityTracker.trackSessionEnd(runId, sessionKey);
+            api.logger.debug?.(`[task-monitor] Session ended: ${sessionKey}`);
+          }
+        } catch (e) {
+          api.logger.error?.(`[task-monitor] Error in session_end hook: ${e}`);
+        }
+      });
+      activityTracker.markHookRegistered('session_end');
+      api.logger.debug?.("[task-monitor] Hook registered: session_end");
+    } catch (e) {
+      activityTracker.markHookFailed('session_end', e);
+    }
+    
+    // 注册流式输出监听（已在 onAgentEvent 中处理）
+    activityTracker.markHookRegistered('onAgentEvent');
+    
+    // 检查钩子完整性，决定是否降级
+    if (!activityTracker.areCriticalHooksRegistered()) {
+      api.logger.warn?.("[task-monitor] Critical hooks not registered, some features may be degraded");
+      if (config.degradation?.fallbackToLayer4Only) {
+        api.logger.warn?.("[task-monitor] Degraded mode: Layer 1/2/3 disabled, Layer 4 only");
+      }
+    } else {
+      api.logger.info?.("[task-monitor] All critical hooks registered successfully");
+    }
+    
+    // ==================== 新增：设置中断处理器回调 ====================
+    interruptHandler.setRetryCallback(async (runId: string, task: TaskState) => {
+      // 执行重试逻辑
+      try {
+        const agentId = task.metadata?.agentId as string;
+        const taskDescription = task.metadata?.taskDescription as string || task.metadata?.label as string || "retry task";
+        
+        await executeRetrySafely(runId, agentId, taskDescription, config.retry.spawnTimeout);
+        api.logger.info?.(`[task-monitor] Retry spawned from interrupt handler: ${runId}`);
+      } catch (e) {
+        api.logger.error?.(`[task-monitor] Failed to spawn retry from interrupt handler: ${e}`);
+        await stateManager?.recordRetryOutcome(runId, "error", String(e));
+      }
+    });
+    
+    // ==================== 新增：启动活跃检测定时器 ====================
+    activityTracker.setInterruptHandler(async (runId, reason, context) => {
+      await interruptHandler.handleInterrupt(runId, reason as any, context);
+    });
+    
+    activityTracker.setToolTimeoutHandler(async (toolCall) => {
+      await interruptHandler.handleToolTimeout(toolCall);
+    });
+    
+    activityTracker.startActivityDetection();
+    activityTracker.startToolTimeoutDetection();
+    activityTracker.startCleanup();
+    
+    // 启动健康检查
+    healthChecker.startHealthCheck();
+    
+    api.logger.info?.("[task-monitor] Activity detection timers started");
+
+    // ==================== 启动时状态恢复 ====================
+    async function recoverRunningTasks(): Promise<void> {
+      const runningDir = path.join(TASKS_DIR, "running");
+      
+      if (!fs.existsSync(runningDir)) {
+        api.logger.info?.("[task-monitor] No running tasks directory, skip recovery");
+        return;
+      }
+      
+      const taskFiles = fs.readdirSync(runningDir).filter(f => f.endsWith(".md"));
+      
+      if (taskFiles.length === 0) {
+        api.logger.info?.("[task-monitor] No running tasks to recover");
+        return;
+      }
+      
+      api.logger.info?.(`[task-monitor] Found ${taskFiles.length} running tasks, checking for recovery...`);
+      
+      let recovered = 0;
+      for (const file of taskFiles) {
+        const filePath = path.join(runningDir, file);
+        try {
+          const content = fs.readFileSync(filePath, "utf-8");
+          
+          // 提取 sessionKey
+          const sessionKeyMatch = content.match(/\*\*SessionKey\*\*:\s*(.+)/m);
+          if (!sessionKeyMatch) continue;
+          
+          const sessionKey = sessionKeyMatch[1].trim();
+          
+          // 检查 StateManager 中是否有对应任务
+          const existingTask = await stateManager?.getTask(sessionKey);
+          
+          if (!existingTask) {
+            // 检查任务状态
+            const isCompleted = content.includes("**状态**: completed") || content.includes("状态: completed");
+            const isPending = content.includes("**状态**: pending") || content.includes("状态: pending");
+            const isRunning = content.includes("**状态**: running") || content.includes("状态: running");
+            
+            // 只恢复 running 状态的任务
+            if (isRunning && !isCompleted) {
+              await stateManager?.createTask({
+                id: sessionKey,
+                type: 'main',
+                status: 'running',
+                startTime: Date.now(),
+                lastHeartbeat: Date.now(),
+                timeoutMs: config.monitoring.mainTaskTimeout,
+                parentTaskId: null,
+                retryCount: 0,
+                maxRetries: 0,
+                retryHistory: [],
+                metadata: {
+                  recovered: true,
+                  recoveredAt: Date.now(),
+                  sourceFile: file
+                }
+              });
+              
+              api.logger.info?.(`[task-monitor] Recovered task: ${sessionKey}`);
+              recovered++;
+            }
+          }
+        } catch (e) {
+          api.logger.error?.(`[task-monitor] Error recovering task ${file}: ${e}`);
+        }
+      }
+      
+      if (recovered > 0) {
+        api.logger.info?.(`[task-monitor] ✅ Recovered ${recovered} tasks`);
+      } else {
+        api.logger.info?.("[task-monitor] No tasks needed recovery");
+      }
+    }
+    
+    // 执行状态恢复
+    recoverRunningTasks().catch(e => {
+      api.logger.error?.(`[task-monitor] Recovery failed: ${e}`);
+    });
 
     // ==================== 消息队列定时器：定期清空队列 ====================
     const queueFlushTimer = setInterval(async () => {
@@ -492,28 +752,57 @@ const plugin = {
               if (content.includes("**状态**: completed") || content.includes("状态: completed")) {
                 const taskName = file.replace(".md", "");
                 
-                // 发送通知（去重）
-                await alertManager?.sendAlert(
-                  `main_completed_${taskName}`,
-                  `✅ 主任务完成\n\n任务: ${taskName}\n时间: ${new Date().toLocaleString("zh-CN")}`,
-                  "main_completed"
-                );
-                
-                // 移动到 completed 目录
+                // 先移动文件到 completed 目录，避免重复检测
                 if (!fs.existsSync(completedDir)) {
                   fs.mkdirSync(completedDir, { recursive: true });
                 }
                 const targetPath = path.join(completedDir, file);
-                if (fs.existsSync(targetPath)) {
-                  // 目标文件已存在，添加时间戳后缀
-                  const timestamp = Date.now();
-                  const newFileName = `${file.replace('.md', '')}_${timestamp}.md`;
-                  const newTargetPath = path.join(completedDir, newFileName);
-                  fs.renameSync(filePath, newTargetPath);
-                  api.logger.info?.(`[task-monitor] Task file renamed due to conflict: ${newFileName}`);
-                } else {
+                
+                // 检查文件是否已经被移动（避免竞争）
+                if (fs.existsSync(filePath) && !fs.existsSync(targetPath)) {
                   fs.renameSync(filePath, targetPath);
                   api.logger.info?.(`[task-monitor] Task file moved to completed: ${file}`);
+                  
+                  // 移动成功后再发送通知
+                  // 从任务记录中直接读取频道和通知目标
+                  const channelMatch = content.match(/\*\*频道\*\*:\s*(\S+)/);
+                  const notifyTargetMatch = content.match(/\*\*通知目标\*\*:\s*(\S+)/);
+                  const taskChannel = channelMatch ? channelMatch[1] : config.notification.channel;
+                  const notifyTarget = notifyTargetMatch ? notifyTargetMatch[1] : config.notification.target;
+                  
+                  api.logger.info?.(`[task-monitor] Sending completion notification to ${taskChannel}: ${notifyTarget}`);
+                  
+                  // 直接调用 message 命令发送通知（带去重）
+                  const alertId = `main_completed_${taskName}`;
+                  
+                  // 检查是否已发送过（内存缓存 + 文件记录）
+                  if (alertManager?.shouldAlert(alertId, "main_completed")) {
+                    const notifyMessage = `✅ 主任务完成\n\n任务: ${taskName}\n时间: ${new Date().toLocaleString("zh-CN")}`;
+                    try {
+                      execSync(
+                        `openclaw message send --channel "${taskChannel}" --target "${notifyTarget}" --message "${notifyMessage.replace(/\n/g, '\\n')}"`,
+                        { timeout: 15000, stdio: 'pipe' }
+                      );
+                      // 记录已发送
+                      alertManager?.recordAlert(alertId, "main_completed");
+                      api.logger.info?.(`[task-monitor] ✅ Notification sent to ${taskChannel}: ${notifyTarget}`);
+                    } catch (e) {
+                      api.logger.error?.(`[task-monitor] Failed to send completion notification: ${e}`);
+                    }
+                  } else {
+                    api.logger.debug?.(`[task-monitor] Alert already sent for ${alertId}, skipping`);
+                  }
+                }
+                
+                // 从 StateManager 中移除已完成的任务（避免重复检测）
+                const existingTask = await stateManager?.getTask(taskName);
+                if (existingTask) {
+                  await stateManager?.updateTask(taskName, { 
+                    status: 'completed',
+                    notified: true,
+                    completedAt: Date.now()
+                  });
+                  api.logger.debug?.(`[task-monitor] Marked task as completed in StateManager: ${taskName}`);
                 }
               }
               // ==================== 停滞任务检测 ====================
@@ -693,12 +982,24 @@ const plugin = {
                   const taskFileName = `main-${sessionShort}-${timestamp}.md`;
                   const taskFilePath = path.join(runningDir, taskFileName);
                   
+                  // 从事件数据中提取频道信息
+                  const eventData = evt.data as any;
+                  const channel = eventData?.inboundMeta?.channel || eventData?.channel || config.notification.channel;
+                  const senderId = eventData?.inboundMeta?.sender_id || eventData?.senderId || "unknown";
+                  
+                  // 确定通知目标（cron 任务使用默认配置）
+                  const notifyTarget = (senderId === "unknown" || !senderId) 
+                    ? config.notification.target 
+                    : senderId;
+                  
                   const taskContent = `# 任务记录
 
 **SessionKey**: ${evt.sessionKey}
 **RunId**: ${evt.runId || "N/A"}
 **创建时间**: ${new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })}
 **状态**: running
+**频道**: ${channel}
+**通知目标**: ${notifyTarget}
 
 ## 任务描述
 
@@ -710,7 +1011,7 @@ const plugin = {
 `;
                   
                   fs.writeFileSync(taskFilePath, taskContent, "utf-8");
-                  api.logger.info?.(`[task-monitor] Auto-created task record: ${taskFileName}`);
+                  api.logger.info?.(`[task-monitor] Auto-created task record: ${taskFileName} (channel: ${channel}, notifyTarget: ${notifyTarget})`);
                 }
               } catch (error) {
                 api.logger.error?.(`[task-monitor] Failed to create task record: ${error}`);
@@ -752,6 +1053,27 @@ const plugin = {
                       
                       fs.writeFileSync(filePath, content, "utf-8");
                       api.logger.info?.(`[task-monitor] Updated task status to completed: ${file}`);
+                      
+                      // 从任务记录中直接读取频道和通知目标
+                      const channelMatch = content.match(/\*\*频道\*\*:\s*(\S+)/);
+                      const notifyTargetMatch = content.match(/\*\*通知目标\*\*:\s*(\S+)/);
+                      const taskChannel = channelMatch ? channelMatch[1] : config.notification.channel;
+                      const notifyTarget = notifyTargetMatch ? notifyTargetMatch[1] : config.notification.target;
+                      
+                      api.logger.info?.(`[task-monitor] Sending completion notification to ${taskChannel}: ${notifyTarget}`);
+                      
+                      // 直接调用 message 命令发送通知
+                      const notifyMessage = `✅ 主任务对话完成\n\n任务: ${file.replace('.md', '')}\n时间: ${new Date().toLocaleString("zh-CN")}`;
+                      try {
+                        execSync(
+                          `openclaw message send --channel "${taskChannel}" --target "${notifyTarget}" --message "${notifyMessage.replace(/\n/g, '\\n')}"`,
+                          { timeout: 15000, stdio: 'pipe' }
+                        );
+                        api.logger.info?.(`[task-monitor] ✅ Notification sent to ${taskChannel}: ${notifyTarget}`);
+                      } catch (e) {
+                        api.logger.error?.(`[task-monitor] Failed to send completion notification: ${e}`);
+                      }
+                      
                       break;
                     }
                   }
@@ -759,13 +1081,6 @@ const plugin = {
               } catch (error) {
                 api.logger.error?.(`[task-monitor] Failed to update task status: ${error}`);
               }
-              
-              // 发送完成通知
-              await alertManager?.sendAlert(
-                `main_turn_${evt.runId || Date.now()}`,
-                `✅ 主任务对话完成\n\nSession: ${evt.sessionKey}\n时间: ${new Date().toLocaleString("zh-CN")}`,
-                "main_turn"
-              );
             }
           }
           
@@ -1104,6 +1419,17 @@ const plugin = {
         await stateManager.updateTask(runId, { status: outcome === "timeout" ? "timeout" : "failed" });
         await stateManager.recordRetryOutcome(runId, outcome, data.error);
 
+        // ==================== 实时上报失败 ====================
+        // 立即发送失败通知（不等待重试决策）
+        const failureMessage = data.error || outcome;
+        await sendNotification(
+          outcome === "timeout" ? "subtask_timeout_realtime" : "subtask_failed_realtime",
+          `🚨 子任务${outcome === "timeout" ? "超时" : "失败"} (实时告警)\n\n` +
+          `任务: ${label}\n` +
+          `原因: ${failureMessage.slice(0, 200)}`
+        );
+        api.logger.warn?.(`[task-monitor] Subagent failed (real-time report): ${runId}, outcome: ${outcome}`);
+
         // 检查是否应该重试
         const shouldRetry = await stateManager.shouldRetry(runId);
 
@@ -1146,6 +1472,121 @@ const plugin = {
       }
     });
 
+    // ==================== 监听 exec 进程 (v12: before_tool_call/after_tool_call hooks) ====================
+    // 追踪正在执行的 exec 任务
+    const execTasks = new Map<string, { startTime: number; command: string; runId?: string; sessionKey?: string }>();
+
+    api.on("before_tool_call", async (event) => {
+      try {
+        // 只监控 Bash/exec 相关工具
+        if (event.toolName !== "Bash" && event.toolName !== "exec") return;
+
+        const params = event.params as { command?: string; timeout?: number };
+        const command = params.command || "unknown command";
+        const execId = event.toolCallId || `exec-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+        api.logger.info?.(`[task-monitor] Exec started: ${execId}, command: ${command.slice(0, 100)}`);
+
+        // 记录到追踪 map
+        execTasks.set(execId, {
+          startTime: Date.now(),
+          command,
+          runId: event.runId,
+          sessionKey: (event as any).sessionKey,
+        });
+
+        // 注册到状态管理器（设置最小 timeout 为 30 秒，避免立即超时）
+        if (stateManager) {
+          const minTimeout = 30000; // 30 秒最小超时
+          const execTimeout = Math.max(params.timeout || 0, minTimeout);
+          
+          try {
+            await stateManager.registerTask({
+              id: execId,
+              type: "exec",
+              status: "running",
+              timeoutMs: execTimeout,
+              parentTaskId: event.runId || null,
+              metadata: {
+                command: command.slice(0, 500),
+                toolName: event.toolName,
+                sessionKey: (event as any).sessionKey,
+              },
+            });
+          } catch (e: any) {
+            if (!e.message?.includes("已存在")) {
+              api.logger.error?.(`[task-monitor] Failed to register exec task: ${e}`);
+            }
+          }
+        }
+      } catch (e) {
+        api.logger.error?.(`[task-monitor] Error in before_tool_call hook: ${e}`);
+      }
+    });
+
+    api.on("after_tool_call", async (event) => {
+      try {
+        // 只监控 Bash/exec 相关工具
+        if (event.toolName !== "Bash" && event.toolName !== "exec") return;
+
+        const execId = event.toolCallId || `exec-${Date.now()}`;
+        const execTask = execTasks.get(execId);
+
+        if (!execTask) {
+          api.logger.debug?.(`[task-monitor] Exec task not found in tracking map: ${execId}`);
+          return;
+        }
+
+        const duration = Date.now() - execTask.startTime;
+        const isError = !!event.error;
+        const isTimeout = event.error?.toLowerCase().includes("timeout") || false;
+
+        api.logger.info?.(`[task-monitor] Exec ended: ${execId}, duration: ${duration}ms, error: ${isError}`);
+
+        // 从追踪 map 移除
+        execTasks.delete(execId);
+
+        // 更新状态管理器
+        if (stateManager) {
+          const status = isError ? (isTimeout ? "timeout" : "failed") : "completed";
+          await stateManager.updateTask(execId, {
+            status,
+            metadata: {
+              command: execTask.command,
+              duration,
+              error: event.error,
+            },
+          });
+
+          // 记录结果
+          if (isError) {
+            await stateManager.recordRetryOutcome(execId, isTimeout ? "timeout" : "error", event.error);
+          } else {
+            await stateManager.recordRetryOutcome(execId, "ok");
+          }
+        }
+
+        // ==================== 实时上报失败 ====================
+        if (isError) {
+          const errorMessage = event.error || "Unknown error";
+          const commandPreview = execTask.command.slice(0, 100);
+
+          // 立即发送失败通知
+          await sendNotification(
+            isTimeout ? "exec_timeout" : "exec_failed",
+            `⚠️ Exec ${isTimeout ? "超时" : "失败"}\n\n` +
+            `命令: ${commandPreview}\n` +
+            `执行时长: ${Math.floor(duration / 1000)}秒\n` +
+            `错误: ${errorMessage.slice(0, 200)}`
+          );
+
+          api.logger.warn?.(`[task-monitor] Exec failed (real-time report): ${execId}, error: ${errorMessage.slice(0, 100)}`);
+        }
+      } catch (e) {
+        api.logger.error?.(`[task-monitor] Error in after_tool_call hook: ${e}`);
+      }
+    });
+
     // ==================== 清理定时器 ====================
     const cleanup = () => {
       clearInterval(timeoutChecker);
@@ -1162,7 +1603,7 @@ const plugin = {
     process.on("SIGTERM", cleanup);
     process.on("SIGINT", cleanup);
 
-    api.logger.info?.("[task-monitor] Plugin registration complete (v11)");
+    api.logger.info?.("[task-monitor] Plugin registration complete (v12)");
   },
 };
 

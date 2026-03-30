@@ -1,1 +1,77 @@
-[]
+[
+  {
+    "taskId": "main_completed_main-test-2026-03-30T00-54-05",
+    "alertType": "main_completed",
+    "timestamp": 1774803348098
+  },
+  {
+    "taskId": "main_completed_main-c05f211f-12ea-4fde-9f0e-0db3ed717e39-2026-03-29T18-00-00",
+    "alertType": "main_completed",
+    "timestamp": 1774807370924
+  },
+  {
+    "taskId": "call_79b2eca870e5465bb45d5809",
+    "alertType": "timeout",
+    "timestamp": 1774825205647
+  },
+  {
+    "taskId": "main_completed_main-test-notification-2026-03-30T07-27-33",
+    "alertType": "main_completed",
+    "timestamp": 1774826869215
+  },
+  {
+    "taskId": "main_completed_main-test-sync-2026-03-30T07-36-59",
+    "alertType": "main_completed",
+    "timestamp": 1774827448228
+  },
+  {
+    "taskId": "progress_69ab9279-90c2-4525-87e1-7d5ad254bc25",
+    "alertType": "progress",
+    "timestamp": 1774828248276
+  },
+  {
+    "taskId": "task_completed",
+    "alertType": "task_completed",
+    "timestamp": 1774828535613
+  },
+  {
+    "taskId": "progress_38428d14-8bae-41aa-9d48-c379f7a1ca9f",
+    "alertType": "progress",
+    "timestamp": 1774829072260
+  },
+  {
+    "taskId": "main_completed_main-8665573247-2026-03-30T00-04-20",
+    "alertType": "main_completed",
+    "timestamp": 1774829129616
+  },
+  {
+    "taskId": "progress_af664f07-d229-473f-ba37-3d079d5e7514",
+    "alertType": "progress",
+    "timestamp": 1774829389945
+  },
+  {
+    "taskId": "health_check_missing_hooks",
+    "alertType": "health_check_warning",
+    "timestamp": 1774830313679
+  },
+  {
+    "taskId": "stalled_running_main-8665573247-2026-03-30T00-18-41",
+    "alertType": "stalled_running",
+    "timestamp": 1774831836426
+  },
+  {
+    "taskId": "interrupt_activity_timeout_bcffcc3d-8ad2-4643-bd9b-6916b245d8e6",
+    "alertType": "interrupt_activity_timeout",
+    "timestamp": 1774831852844
+  },
+  {
+    "taskId": "interrupt_activity_timeout_430a9ac0-b3a4-4143-af2b-44461c43918d",
+    "alertType": "interrupt_activity_timeout",
+    "timestamp": 1774832882306
+  },
+  {
+    "taskId": "call_93a8d4b56ab94f1eada13a0b",
+    "alertType": "timeout",
+    "timestamp": 1774832975191
+  }
+]

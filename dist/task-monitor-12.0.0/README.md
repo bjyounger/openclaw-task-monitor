@@ -13,13 +13,46 @@ Task monitoring plugin for OpenClaw with automatic retry mechanism, task chain t
 - **Persistent Scheduling**: Retry schedules survive plugin restarts
 - **Safe Execution**: Uses `spawn` with array parameters to prevent command injection
 - **Watchdog**: Cron-based fallback to ensure retries execute even if plugin restarts
-- **Notifications**: Send retry alerts and final failure notifications via WeCom
+- **Notifications**: Send alerts via configured channel (WeCom, Telegram, etc.)
+
+### Notification Configuration (v12.1+)
+
+Add to `openclaw.json`:
+
+```json
+{
+  "plugins": {
+    "entries": {
+      "task-monitor": {
+        "enabled": true,
+        "config": {
+          "notification": {
+            "channel": "wecom",
+            "target": "wecom:YangKe",
+            "throttle": 3000,
+            "maxMessageLength": 4096
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `channel` | Yes | Notification channel (wecom, telegram, etc.) |
+| `target` | Yes | Target identifier (e.g., wecom:YangKe) |
+| `throttle` | No | Message throttle interval in ms (default: 1000) |
+| `maxMessageLength` | No | Max message length (default: 4096) |
 
 ### New Features (v12+)
 
 - **Config Injection**: Automatically inject hard constraints into workspace files (AGENTS.md, HEARTBEAT.md)
 - **Workspace Templates**: Plugin-provided templates for verification rules, debugging workflow, planning process
 - **Backup Support**: Automatic backup before injection
+- **Exec Process Monitoring**: Monitor background exec processes
+- **Real-time Failure Reporting**: Immediate alerts on task failures
 
 ## Message Queue (v12)
 
@@ -395,4 +428,39 @@ rm -rf ~/.openclaw/extensions/task-monitor
 cd ~/.openclaw/extensions
 wget https://github.com/bjyounger/openclaw-task-monitor/releases/latest/download/task-monitor.tgz
 tar -xzf task-monitor.tgz
+```
+
+---
+
+## Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| **v12.0.0** | 2026-03-26 | Config injection, pre-compiled packaging, OpenClaw 3.22 compat |
+| v11.0.0 | 2026-03-24 | Auto task record, main task monitoring |
+| v10.0.0 | 2026-03-23 | Task chain tracking, timeout detection |
+| v9.0.0 | 2026-03-22 | Message queue for notifications |
+| v8.0.0 | 2026-03-21 | Auto-retry mechanism v3 |
+
+---
+
+## Changelog
+
+### v12.0.0 (2026-03-26)
+
+**New Features**:
+- Config injection for workspace templates
+- Pre-compiled packaging support
+- Message queue for notifications
+- OpenClaw 3.22 compatibility
+
+**Breaking Changes**:
+- `openclaw` is now a peerDependency (must be installed in OpenClaw environment)
+
+**Installation**:
+```bash
+# Pre-compiled (recommended)
+wget https://github.com/bjyounger/openclaw-task-monitor/releases/download/v12.0.0/task-monitor-12.0.0.tgz
+tar -xzf task-monitor-12.0.0.tgz
+mv task-monitor-12.0.0 ~/.openclaw/extensions/task-monitor
 ```

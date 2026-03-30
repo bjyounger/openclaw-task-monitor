@@ -10,9 +10,17 @@ import {
   TaskChainManager, 
   loadConfig,
   messageQueue,
+  ActivityTracker,
+  getActivityTracker,
+  InterruptHandler,
+  getInterruptHandler,
+  HealthChecker,
+  getHealthChecker,
   type TaskState, 
   type ScheduledRetry,
   type TaskMonitorConfig,
+  type ActivityState,
+  type SessionType,
 } from "./lib";
 
 // ==================== Session Key 辅助函数 ====================
@@ -436,6 +444,178 @@ const plugin = {
       api.logger.info?.(`[task-monitor] Message queue config: maxQueueSize=${config.messageQueue.maxQueueSize}, maxRetries=${config.messageQueue.maxRetries}`);
     }
     api.logger.info?.("[task-monitor] Message queue initialized");
+
+    // ==================== 新增：活跃检测初始化 ====================
+    // 初始化活跃追踪器
+    const activityConfig = config.activityDetection || {};
+    const toolTimeoutsConfig = config.toolTimeouts?.timeouts || {};
+    
+    const activityTracker = getActivityTracker(activityConfig, toolTimeoutsConfig);
+    activityTracker.initialize(api);
+    
+    // 初始化中断处理器
+    const interruptConfig = {
+      enabled: config.alertDeduplication?.enabled ?? true,
+      alertCooldownPeriod: config.alertDeduplication?.cooldownPeriod ?? 300000,
+      autoRetryEnabled: config.retry.maxRetries > 0,
+      maxRetries: config.retry.maxRetries,
+      backoffMultiplier: config.retry.backoffMultiplier,
+      initialDelay: config.retry.initialDelay,
+    };
+    
+    const interruptHandler = getInterruptHandler(interruptConfig);
+    interruptHandler.initialize(api, stateManager, alertManager);
+    
+    // 初始化健康检查器
+    const healthConfig = config.healthCheck || {};
+    const healthChecker = getHealthChecker(healthConfig);
+    healthChecker.initialize(api, alertManager, activityTracker);
+    
+    api.logger.info?.("[task-monitor] Activity detection initialized (Layer 1)");
+    
+    // ==================== 新增：钩子注册 ====================
+    // 注册 before_tool_call 钩子
+    try {
+      api.on("before_tool_call", async (event) => {
+        try {
+          // 排除不需要追踪的工具
+          const excludeTools = activityConfig.excludeTools || ['read', 'web_fetch'];
+          if (excludeTools.includes(event.toolName)) return;
+          
+          const runId = event.runId || event.toolCallId;
+          const sessionKey = (event as any).sessionKey || '';
+          
+          // 如果还没有活跃状态，创建一个
+          if (!activityTracker.getActivity(runId)) {
+            const type: SessionType = sessionKey.includes(':subagent:') ? 'sub' : 
+                                      sessionKey.includes(':acp:') ? 'acp' : 'main';
+            activityTracker.createActivity(runId, sessionKey, type);
+          }
+          
+          // 开始工具调用追踪
+          activityTracker.startToolCall(
+            event.toolCallId,
+            event.toolName,
+            runId,
+            event.params as Record<string, unknown>,
+            sessionKey
+          );
+        } catch (e) {
+          api.logger.error?.(`[task-monitor] Error in before_tool_call hook: ${e}`);
+        }
+      });
+      activityTracker.markHookRegistered('before_tool_call');
+      api.logger.debug?.("[task-monitor] Hook registered: before_tool_call");
+    } catch (e) {
+      activityTracker.markHookFailed('before_tool_call', e);
+    }
+    
+    // 注册 after_tool_call 钩子
+    try {
+      api.on("after_tool_call", async (event) => {
+        try {
+          const runId = event.runId || event.toolCallId;
+          const isError = !!event.error;
+          
+          // 结束工具调用追踪
+          activityTracker.endToolCall(event.toolCallId, isError);
+        } catch (e) {
+          api.logger.error?.(`[task-monitor] Error in after_tool_call hook: ${e}`);
+        }
+      });
+      activityTracker.markHookRegistered('after_tool_call');
+      api.logger.debug?.("[task-monitor] Hook registered: after_tool_call");
+    } catch (e) {
+      activityTracker.markHookFailed('after_tool_call', e);
+    }
+    
+    // 注册 session_start 钩子
+    try {
+      api.on("session_start", async (event: any) => {
+        try {
+          const sessionKey = event.sessionKey || event.key;
+          const runId = event.runId || event.id;
+          
+          if (sessionKey && !sessionKey.includes(":subagent:")) {
+            activityTracker.trackSessionStart(runId, sessionKey, 'main');
+            api.logger.debug?.(`[task-monitor] Session started: ${sessionKey}`);
+          }
+        } catch (e) {
+          api.logger.error?.(`[task-monitor] Error in session_start hook: ${e}`);
+        }
+      });
+      activityTracker.markHookRegistered('session_start');
+      api.logger.debug?.("[task-monitor] Hook registered: session_start");
+    } catch (e) {
+      activityTracker.markHookFailed('session_start', e);
+    }
+    
+    // 注册 session_end 钩子
+    try {
+      api.on("session_end", async (event: any) => {
+        try {
+          const sessionKey = event.sessionKey || event.key;
+          const runId = event.runId || event.id;
+          
+          if (sessionKey) {
+            activityTracker.trackSessionEnd(runId, sessionKey);
+            api.logger.debug?.(`[task-monitor] Session ended: ${sessionKey}`);
+          }
+        } catch (e) {
+          api.logger.error?.(`[task-monitor] Error in session_end hook: ${e}`);
+        }
+      });
+      activityTracker.markHookRegistered('session_end');
+      api.logger.debug?.("[task-monitor] Hook registered: session_end");
+    } catch (e) {
+      activityTracker.markHookFailed('session_end', e);
+    }
+    
+    // 注册流式输出监听（已在 onAgentEvent 中处理）
+    activityTracker.markHookRegistered('onAgentEvent');
+    
+    // 检查钩子完整性，决定是否降级
+    if (!activityTracker.areCriticalHooksRegistered()) {
+      api.logger.warn?.("[task-monitor] Critical hooks not registered, some features may be degraded");
+      if (config.degradation?.fallbackToLayer4Only) {
+        api.logger.warn?.("[task-monitor] Degraded mode: Layer 1/2/3 disabled, Layer 4 only");
+      }
+    } else {
+      api.logger.info?.("[task-monitor] All critical hooks registered successfully");
+    }
+    
+    // ==================== 新增：设置中断处理器回调 ====================
+    interruptHandler.setRetryCallback(async (runId: string, task: TaskState) => {
+      // 执行重试逻辑
+      try {
+        const agentId = task.metadata?.agentId as string;
+        const taskDescription = task.metadata?.taskDescription as string || task.metadata?.label as string || "retry task";
+        
+        await executeRetrySafely(runId, agentId, taskDescription, config.retry.spawnTimeout);
+        api.logger.info?.(`[task-monitor] Retry spawned from interrupt handler: ${runId}`);
+      } catch (e) {
+        api.logger.error?.(`[task-monitor] Failed to spawn retry from interrupt handler: ${e}`);
+        await stateManager?.recordRetryOutcome(runId, "error", String(e));
+      }
+    });
+    
+    // ==================== 新增：启动活跃检测定时器 ====================
+    activityTracker.setInterruptHandler(async (runId, reason, context) => {
+      await interruptHandler.handleInterrupt(runId, reason as any, context);
+    });
+    
+    activityTracker.setToolTimeoutHandler(async (toolCall) => {
+      await interruptHandler.handleToolTimeout(toolCall);
+    });
+    
+    activityTracker.startActivityDetection();
+    activityTracker.startToolTimeoutDetection();
+    activityTracker.startCleanup();
+    
+    // 启动健康检查
+    healthChecker.startHealthCheck();
+    
+    api.logger.info?.("[task-monitor] Activity detection timers started");
 
     // ==================== 启动时状态恢复 ====================
     async function recoverRunningTasks(): Promise<void> {

@@ -35,8 +35,8 @@ export class AlertManager {
   /** 告警记录存储路径 */
   private alertPath: string;
 
-  /** 冷却期（毫秒），默认5分钟 */
-  private readonly COOLDOWN_MS: number = 300000;
+  /** 冷却期（毫秒），默认30分钟 */
+  private readonly COOLDOWN_MS: number = 1800000;
 
   /** 告警配置 */
   private config: AlertConfig;

@@ -30,3 +30,47 @@ export type { QueuedMessage, MessageQueueConfig } from './message-queue';
 
 export { ConfigInjector } from './config-injector';
 export type { InjectableConfig, InjectConfig } from './config-injector';
+
+// 新增：活跃追踪模块
+export { 
+  ActivityTracker, 
+  getActivityTracker, 
+  resetActivityTracker,
+  DEFAULT_ACTIVITY_TRACKER_CONFIG,
+  DEFAULT_TOOL_TIMEOUTS,
+} from './activity-tracker';
+export type {
+  ActivityState,
+  SessionType,
+  WaitState,
+  WaitStateType,
+  ToolCallInfo,
+  ActivityTrackerConfig,
+  HookRegistrationStatus,
+} from './activity-tracker';
+
+// 新增：中断处理模块
+export { 
+  InterruptHandler, 
+  getInterruptHandler, 
+  resetInterruptHandler,
+  DEFAULT_INTERRUPT_HANDLER_CONFIG,
+} from './interrupt-handler';
+export type {
+  InterruptReason,
+  InterruptContext,
+  InterruptRecord,
+  InterruptHandlerConfig,
+} from './interrupt-handler';
+
+// 新增：健康检查模块
+export { 
+  HealthChecker, 
+  getHealthChecker, 
+  resetHealthChecker,
+  DEFAULT_HEALTH_CHECKER_CONFIG,
+} from './health-checker';
+export type {
+  HealthStatus,
+  HealthCheckerConfig,
+} from './health-checker';

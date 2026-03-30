@@ -1,6 +1,7 @@
 {
   "$schema": "./config.schema.json",
-  "version": "1.1.0",
+  "version": "1.0.0",
+  
   "monitoring": {
     "subtaskTimeout": 3600000,
     "taskChainTimeout": 5400000,
@@ -8,6 +9,7 @@
     "stalledRunningThreshold": 1800000,
     "mainTaskTimeout": 7200000
   },
+  
   "retry": {
     "maxRetries": 2,
     "checkInterval": 10000,
@@ -15,14 +17,16 @@
     "backoffMultiplier": 2,
     "initialDelay": 60000
   },
+  
   "progress": {
     "enabled": true,
     "reportInterval": 60000,
     "timeoutCheckInterval": 60000
   },
+  
   "notification": {
-    "channel": "telegram",
-    "target": "8665573247",
+    "channel": "wecom",
+    "target": "wecom:YangKe",
     "enabled": true,
     "throttle": 3000,
     "maxMessageLength": 200,
@@ -39,67 +43,23 @@
       "mainTaskCompleted": false,
       "taskChainTimeout": false,
       "stalledTask": true,
-      "progress": false,
-      "retry": true,
-      "mainCompleted": false
+      "progress": true,
+      "retry": true
     }
   },
+  
   "messageQueue": {
     "maxQueueSize": 100,
     "maxRetries": 3,
     "retryInterval": 5000
   },
+  
   "storage": {
     "stateDir": "~/.openclaw/extensions/task-monitor/state",
     "tasksDir": "~/.openclaw/workspace/memory/tasks"
   },
+  
   "logging": {
     "level": "info"
-  },
-  "activityDetection": {
-    "enabled": true,
-    "checkInterval": 10000,
-    "thresholds": {
-      "main": 60000,
-      "sub": 180000,
-      "acp": 300000
-    },
-    "excludeTools": ["read", "web_fetch"],
-    "waitForStates": {
-      "api_response": 300000,
-      "user_input": 600000,
-      "file_lock": 60000,
-      "subagent_wait": 600000,
-      "browser_wait": 300000
-    },
-    "staleCleanupInterval": 3600000,
-    "staleThreshold": 21600000
-  },
-  "toolTimeouts": {
-    "enabled": true,
-    "checkInterval": 30000,
-    "timeouts": {
-      "exec": 300000,
-      "http": 120000,
-      "read": 30000,
-      "write": 30000,
-      "browser": 300000,
-      "sessions_spawn": 600000,
-      "process": 300000,
-      "canvas": 300000
-    }
-  },
-  "healthCheck": {
-    "enabled": true,
-    "checkInterval": 300000,
-    "alertOnBlocked": true
-  },
-  "alertDeduplication": {
-    "enabled": true,
-    "cooldownPeriod": 300000
-  },
-  "degradation": {
-    "enabled": true,
-    "fallbackToLayer4Only": true
   }
 }

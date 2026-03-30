@@ -7,7 +7,7 @@
     "version": {
       "type": "string",
       "description": "Configuration version",
-      "default": "1.0.0"
+      "default": "1.1.0"
     },
     "monitoring": {
       "type": "object",
@@ -169,8 +169,33 @@
             "taskChainTimeout": { "type": "boolean", "default": true },
             "stalledTask": { "type": "boolean", "default": true },
             "progress": { "type": "boolean", "default": true },
-            "retry": { "type": "boolean", "default": true }
+            "retry": { "type": "boolean", "default": true },
+            "mainCompleted": { "type": "boolean", "default": true }
           }
+        }
+      }
+    },
+    "messageQueue": {
+      "type": "object",
+      "description": "Message queue parameters",
+      "properties": {
+        "maxQueueSize": {
+          "type": "integer",
+          "description": "Maximum queue size",
+          "minimum": 10,
+          "default": 100
+        },
+        "maxRetries": {
+          "type": "integer",
+          "description": "Maximum send retries",
+          "minimum": 1,
+          "default": 3
+        },
+        "retryInterval": {
+          "type": "integer",
+          "description": "Retry interval in milliseconds",
+          "minimum": 1000,
+          "default": 5000
         }
       }
     },
@@ -198,6 +223,163 @@
           "type": "string",
           "enum": ["debug", "info", "warn", "error"],
           "default": "info"
+        }
+      }
+    },
+    "activityDetection": {
+      "type": "object",
+      "description": "Activity detection parameters (Layer 1)",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable activity detection",
+          "default": true
+        },
+        "checkInterval": {
+          "type": "integer",
+          "description": "Check interval in milliseconds",
+          "minimum": 5000,
+          "default": 10000
+        },
+        "thresholds": {
+          "type": "object",
+          "description": "Activity timeout thresholds by session type",
+          "properties": {
+            "main": {
+              "type": "integer",
+              "description": "Main task activity timeout in milliseconds",
+              "minimum": 10000,
+              "default": 60000
+            },
+            "sub": {
+              "type": "integer",
+              "description": "Subtask activity timeout in milliseconds",
+              "minimum": 30000,
+              "default": 180000
+            },
+            "acp": {
+              "type": "integer",
+              "description": "ACP session activity timeout in milliseconds",
+              "minimum": 60000,
+              "default": 300000
+            }
+          }
+        },
+        "excludeTools": {
+          "type": "array",
+          "description": "Tools to exclude from activity tracking",
+          "items": { "type": "string" },
+          "default": ["read", "web_fetch"]
+        },
+        "waitForStates": {
+          "type": "object",
+          "description": "Default timeout for wait states",
+          "properties": {
+            "api_response": { "type": "integer", "minimum": 10000, "default": 300000 },
+            "user_input": { "type": "integer", "minimum": 10000, "default": 600000 },
+            "file_lock": { "type": "integer", "minimum": 10000, "default": 60000 },
+            "subagent_wait": { "type": "integer", "minimum": 10000, "default": 600000 },
+            "browser_wait": { "type": "integer", "minimum": 10000, "default": 300000 }
+          }
+        },
+        "staleCleanupInterval": {
+          "type": "integer",
+          "description": "Stale record cleanup interval in milliseconds",
+          "minimum": 60000,
+          "default": 3600000
+        },
+        "staleThreshold": {
+          "type": "integer",
+          "description": "Stale record threshold in milliseconds",
+          "minimum": 600000,
+          "default": 21600000
+        }
+      }
+    },
+    "toolTimeouts": {
+      "type": "object",
+      "description": "Tool timeout parameters (Layer 2)",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable tool timeout detection",
+          "default": true
+        },
+        "checkInterval": {
+          "type": "integer",
+          "description": "Check interval in milliseconds",
+          "minimum": 10000,
+          "default": 30000
+        },
+        "timeouts": {
+          "type": "object",
+          "description": "Timeout values for each tool in milliseconds",
+          "additionalProperties": { "type": "integer", "minimum": 1000 },
+          "default": {
+            "exec": 300000,
+            "http": 120000,
+            "read": 30000,
+            "write": 30000,
+            "browser": 300000,
+            "sessions_spawn": 600000,
+            "process": 300000,
+            "canvas": 300000
+          }
+        }
+      }
+    },
+    "healthCheck": {
+      "type": "object",
+      "description": "Health check parameters",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable health check",
+          "default": true
+        },
+        "checkInterval": {
+          "type": "integer",
+          "description": "Health check interval in milliseconds",
+          "minimum": 60000,
+          "default": 300000
+        },
+        "alertOnBlocked": {
+          "type": "boolean",
+          "description": "Send alert when timer is blocked",
+          "default": true
+        }
+      }
+    },
+    "alertDeduplication": {
+      "type": "object",
+      "description": "Alert deduplication parameters",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable alert deduplication",
+          "default": true
+        },
+        "cooldownPeriod": {
+          "type": "integer",
+          "description": "Alert cooldown period in milliseconds",
+          "minimum": 60000,
+          "default": 300000
+        }
+      }
+    },
+    "degradation": {
+      "type": "object",
+      "description": "Degradation parameters",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable degradation mode",
+          "default": true
+        },
+        "fallbackToLayer4Only": {
+          "type": "boolean",
+          "description": "Fall back to Layer 4 only when hooks fail",
+          "default": true
         }
       }
     }

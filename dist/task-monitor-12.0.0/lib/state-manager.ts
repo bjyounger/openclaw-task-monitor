@@ -8,8 +8,9 @@ import * as path from 'path';
  * - main: 主任务
  * - sub: 子任务（通过 sessions_spawn 创建）
  * - embedded: 嵌入式运行（主任务内部的 LLM 调用）
+ * - exec: 后台进程执行（通过 Bash 工具启动的命令）
  */
-export type TaskType = 'main' | 'sub' | 'embedded';
+export type TaskType = 'main' | 'sub' | 'embedded' | 'exec';
 
 /**
  * 任务状态 (v3 扩展版)
