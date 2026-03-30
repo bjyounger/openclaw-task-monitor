@@ -60,7 +60,7 @@
     "enabled": true,
     "checkInterval": 10000,
     "thresholds": {
-      "main": 300000,
+      "main": 0,
       "sub": 180000,
       "acp": 300000
     },
