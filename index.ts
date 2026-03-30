@@ -919,6 +919,16 @@ const plugin = {
       }
     }, config.retry.checkInterval);
 
+    // ==================== 定时器 3: InterruptHandler 清理 ====================
+    // 每小时清理一次陈旧的中断记录，防止内存泄漏
+    const cleanupChecker = setInterval(() => {
+      try {
+        interruptHandler.cleanup(3600000);  // 清理 1 小时前的记录
+      } catch (e) {
+        api.logger.error?.(`[task-monitor] Cleanup error: ${e}`);
+      }
+    }, 3600000);  // 每小时执行一次
+
     // ==================== 子任务反馈流配置 ====================
     // 使用主配置中的通知参数作为基础
     const streamConfig: StreamConfig = {
@@ -1593,12 +1603,15 @@ const plugin = {
     const cleanup = () => {
       clearInterval(timeoutChecker);
       clearInterval(retryChecker);
+      clearInterval(cleanupChecker);
       clearInterval(queueFlushTimer);
       // 清理所有进度报告定时器
       for (const [runId, timer] of progressReporters) {
         clearInterval(timer);
         progressReporters.delete(runId);
       }
+      // 清理 InterruptHandler
+      interruptHandler.shutdown();
       api.logger.info?.("[task-monitor] Cleanup complete");
     };
 

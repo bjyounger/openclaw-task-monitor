@@ -13,6 +13,8 @@ export interface AlertConfig {
   channel: string;
   /** 发送目标 */
   target: string;
+  /** 冷却期（毫秒） */
+  cooldownPeriod?: number;
 }
 
 /**
@@ -35,8 +37,8 @@ export class AlertManager {
   /** 告警记录存储路径 */
   private alertPath: string;
 
-  /** 冷却期（毫秒），默认30分钟 */
-  private readonly COOLDOWN_MS: number = 1800000;
+  /** 冷却期（毫秒），从配置读取，默认30分钟 */
+  private readonly cooldownMs: number;
 
   /** 告警配置 */
   private config: AlertConfig;
@@ -47,6 +49,7 @@ export class AlertManager {
   constructor(config: AlertConfig, alertPath?: string) {
     this.config = config;
     this.alertPath = alertPath || path.join(process.cwd(), '.alert-records.json');
+    this.cooldownMs = config.cooldownPeriod ?? 1800000;  // 从配置读取，默认30分钟
     this.loadRecords();
   }
 
@@ -114,7 +117,7 @@ export class AlertManager {
     const timeSinceLastAlert = now - record.timestamp;
 
     // 如果超过冷却期，应该发送告警
-    if (timeSinceLastAlert >= this.COOLDOWN_MS) {
+    if (timeSinceLastAlert >= this.cooldownMs) {
       return true;
     }
 
@@ -215,7 +218,7 @@ export class AlertManager {
     const keysToDelete: string[] = [];
 
     this.alertRecords.forEach((record, key) => {
-      if (now - record.timestamp >= this.COOLDOWN_MS) {
+      if (now - record.timestamp >= this.cooldownMs) {
         keysToDelete.push(key);
       }
     });
@@ -250,7 +253,7 @@ export class AlertManager {
    * 获取冷却期设置（毫秒）
    */
   public getCooldownMs(): number {
-    return this.COOLDOWN_MS;
+    return this.cooldownMs;
   }
 
   /**

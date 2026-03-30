@@ -510,6 +510,8 @@ export class InterruptHandler {
       
       if (filtered.length === 0) {
         this.interruptRecords.delete(runId);
+        // 同时清理 activityTimeoutAlerted 中的记录
+        this.activityTimeoutAlerted.delete(runId);
         cleaned += records.length;
       } else if (filtered.length < records.length) {
         this.interruptRecords.set(runId, filtered);
@@ -537,6 +539,7 @@ export class InterruptHandler {
   public shutdown(): void {
     this.interruptRecords.clear();
     this.alertCooldowns.clear();
+    this.activityTimeoutAlerted.clear();
     this.api?.logger.info?.('[interrupt-handler] Shutdown complete');
   }
 }
