@@ -216,8 +216,11 @@ export class InterruptHandler {
    * 处理工具超时
    */
   public async handleToolTimeout(toolCall: ToolCallInfo): Promise<void> {
+    const elapsed = Date.now() - toolCall.startTime;
     await this.handleInterrupt(toolCall.runId, 'tool_timeout', {
       toolCall,
+      elapsed,
+      threshold: toolCall.timeout,
     });
   }
 
