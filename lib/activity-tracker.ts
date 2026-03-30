@@ -401,7 +401,9 @@ export class ActivityTracker {
     params?: Record<string, unknown>,
     sessionKey?: string
   ): ToolCallInfo {
-    const timeout = this.toolTimeouts[toolName] || 300000; // 默认 5 分钟
+    // 获取配置的超时值，正确处理 0 值（表示禁用超时检测）
+    const configuredTimeout = this.toolTimeouts[toolName];
+    const timeout = configuredTimeout !== undefined ? configuredTimeout : 300000; // 默认 5 分钟
     
     const call: ToolCallInfo = {
       toolCallId,
@@ -679,6 +681,11 @@ export class ActivityTracker {
     const now = Date.now();
     
     for (const [toolCallId, call] of this.toolCallMap) {
+      // 如果 timeout 为 0，表示禁用该工具的超时检测
+      if (call.timeout <= 0) {
+        continue;
+      }
+      
       const elapsed = now - call.startTime;
       
       if (elapsed > call.timeout) {
