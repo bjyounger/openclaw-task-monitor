@@ -394,20 +394,89 @@
     {
       "id": "call_7b64d5b581644c2586a37db9",
       "type": "exec",
-      "status": "running",
+      "status": "completed",
       "timeoutMs": 30000,
       "parentTaskId": "7e43693d-c61a-413f-ab4c-e10444e25d42",
       "metadata": {
-        "command": "echo \"=== 调整策略 ===\" && \\\necho \"方案：禁用主任务的活跃超时检测（主任务等待用户输入是正常的）\" && \\\necho \"\" && \\\necho \"修改配置...\" && \\\ncat /root/.openclaw/extensions/task-monitor/config.json | jq '.activityDetection.thresholds.main = 0' > /tmp/config.json && \\\nmv /tmp/config.json /root/.openclaw/extensions/task-monitor/config.json && \\\necho \"\" && \\\necho \"=== 验证配置 ===\" && \\\ncat /root/.openclaw/extensions/task-monitor/config.json | jq '.activityDetection.thresholds' && \\\necho \"\" && \\\necho \"=== 提交更改 ===\" && \\\ncd /root/.openclaw/ext",
-        "toolName": "exec"
+        "command": "echo \"=== 调整策略 ===\" && \\\necho \"方案：禁用主任务的活跃超时检测（主任务等待用户输入是正常的）\" && \\\necho \"\" && \\\necho \"修改配置...\" && \\\ncat /root/.openclaw/extensions/task-monitor/config.json | jq '.activityDetection.thresholds.main = 0' > /tmp/config.json && \\\nmv /tmp/config.json /root/.openclaw/extensions/task-monitor/config.json && \\\necho \"\" && \\\necho \"=== 验证配置 ===\" && \\\ncat /root/.openclaw/extensions/task-monitor/config.json | jq '.activityDetection.thresholds' && \\\necho \"\" && \\\necho \"=== 提交更改 ===\" && \\\ncd /root/.openclaw/extensions/task-monitor && \\\ngit add -A && \\\ngit commit -m \"fix: disable main task activity timeout detection\n\nMain tasks often wait for user input, which is normal behavior.\nOnly subtasks and ACP sessions need activity timeout detection.\" && \\\ngit push origin main && \\\necho \"\" && \\\necho \"=== 重启 Gateway ===\" && \\\nsystemctl restart openclaw-gateway && \\\nsleep 3 && \\\nsystemctl is-active openclaw-gateway",
+        "duration": 2157
       },
       "startTime": 1774850980288,
       "lastHeartbeat": 1774850980288,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774850982447,
+          "outcome": "ok",
+          "duration": 2159
+        }
+      ]
+    },
+    {
+      "id": "call_44977535b2bc4b148c459431",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "63506abd-a04a-4426-918e-4ef05dab25ab",
+      "metadata": {
+        "command": "echo \"=== 检查兜底检测配置 ===\" && \\\ncat /root/.openclaw/extensions/task-monitor/config.json | jq '{monitoring: {mainTaskTimeout: .monitoring.mainTaskTimeout, stalledRunningThreshold: .monitoring.stalledRunningThreshold}, fallbackTimeout: .fallbackTimeout}' && \\\necho \"\" && \\\necho \"=== 检查停滞检测逻辑 ===\" && \\\ngrep -A 10 \"stalledRunningThreshold\\|Stalled task detected\" /root/.openclaw/extensions/task-monitor/index.ts | head -20",
+        "duration": 281
+      },
+      "startTime": 1774851398504,
+      "lastHeartbeat": 1774851398504,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774851398788,
+          "outcome": "ok",
+          "duration": 284
+        }
+      ]
+    },
+    {
+      "id": "call_8fbe0520c1614eddb1caadf9",
+      "type": "exec",
+      "status": "completed",
+      "timeoutMs": 30000,
+      "parentTaskId": "44716e07-80ad-4870-94b4-f3f47d121803",
+      "metadata": {
+        "command": "echo \"=== 检查 Gateway 状态 ===\" && \\\nsystemctl is-active openclaw-gateway && \\\necho \"\" && \\\necho \"=== 检查配置是否生效 ===\" && \\\ncat /root/.openclaw/extensions/task-monitor/config.json | jq '.activityDetection.thresholds' && \\\necho \"\" && \\\necho \"=== 检查最近的活跃检测日志 ===\" && \\\njournalctl -u openclaw-gateway --no-pager --since \"14:15:00\" | grep -i \"activity timeout\\|threshold\" | tail -5",
+        "duration": 298
+      },
+      "startTime": 1774851906523,
+      "lastHeartbeat": 1774851906523,
+      "retryCount": 0,
+      "maxRetries": 2,
+      "retryHistory": [
+        {
+          "attemptNumber": 0,
+          "timestamp": 1774851906825,
+          "outcome": "ok",
+          "duration": 302
+        }
+      ]
+    },
+    {
+      "id": "call_2b2dbc698d5f4d40903b1066",
+      "type": "exec",
+      "status": "running",
+      "timeoutMs": 30000,
+      "parentTaskId": "0b56d9d7-90a6-4872-b806-75e480bdab60",
+      "metadata": {
+        "command": "cd /root/.openclaw/extensions/task-monitor && \\\necho \"=== 检查状态 ===\" && \\\ngit status && \\\necho \"\" && \\\necho \"=== 提交并推送 ===\" && \\\ngit add -A && \\\ngit commit -m \"fix: disable main task activity timeout detection\n\nMain tasks often wait for user input, which is normal behavior.\nOnly subtasks and ACP sessions need activity timeout detection.\n\nFallback mechanisms still work:\n- Layer 4 timeout (2 hours)\n- Stalled task detection (30 min)\n- Completion detection\" && \\\ngit push origin main && \\\necho \"\" && \\",
+        "toolName": "exec"
+      },
+      "startTime": 1774852276824,
+      "lastHeartbeat": 1774852276824,
       "retryCount": 0,
       "maxRetries": 2,
       "retryHistory": []
     }
   ],
   "version": "2.0.0",
-  "lastUpdated": 1774850980288
+  "lastUpdated": 1774852276824
 }
