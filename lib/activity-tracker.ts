@@ -606,7 +606,13 @@ export class ActivityTracker {
     }
     
     // 检查活跃超时
-    const threshold = this.config.thresholds[activity.type] || 60000;
+    const threshold = this.config.thresholds[activity.type];
+    
+    // 阈值为 0 表示禁用该类型的活跃检测
+    if (!threshold || threshold <= 0) {
+      return;
+    }
+    
     const elapsed = now - activity.lastActivity;
     
     if (elapsed > threshold) {
