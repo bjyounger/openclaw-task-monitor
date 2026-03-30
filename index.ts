@@ -658,17 +658,13 @@ const plugin = {
             
             // 只恢复 running 状态的任务
             if (isRunning && !isCompleted) {
-              await stateManager?.createTask({
+              await stateManager?.registerTask({
                 id: sessionKey,
                 type: 'main',
                 status: 'running',
-                startTime: Date.now(),
-                lastHeartbeat: Date.now(),
                 timeoutMs: config.monitoring.mainTaskTimeout,
                 parentTaskId: null,
-                retryCount: 0,
                 maxRetries: 0,
-                retryHistory: [],
                 metadata: {
                   recovered: true,
                   recoveredAt: Date.now(),
@@ -1169,19 +1165,22 @@ const plugin = {
         if (!streamConfig.streamToParent) return;
         
         const sessionFile = update.sessionFile;
-        api.logger.debug?.(`[task-monitor] Transcript update: ${sessionFile}`);
+        api.logger.info?.(`[task-monitor] Transcript update received: ${sessionFile}`);
         
         // 1. 从 sessions.json 查找 sessionKey
         const sessionKey = await findSessionKeyByFile(sessionFile);
         if (!sessionKey) {
-          api.logger.debug?.(`[task-monitor] No sessionKey found for file: ${sessionFile}`);
+          api.logger.info?.(`[task-monitor] No sessionKey found for file: ${sessionFile}`);
           return;
         }
         
         // 2. 判断是否是子任务会话
         if (!isSubagentSessionKey(sessionKey)) {
+          api.logger.info?.(`[task-monitor] Not a subagent session, skipping: ${sessionKey}`);
           return; // 不是子任务，忽略
         }
+        
+        api.logger.info?.(`[task-monitor] Subagent transcript detected: ${sessionKey}`);
         
         // 3. 节流检查
         const now = Date.now();
@@ -1192,13 +1191,15 @@ const plugin = {
         
         // 4. 获取父会话 key
         const parentSessionKey = resolveThreadParentSessionKey(sessionKey);
+        api.logger.info?.(`[task-monitor] Parent sessionKey resolved: ${parentSessionKey}`);
         if (!parentSessionKey) {
-          api.logger.debug?.(`[task-monitor] No parent sessionKey for: ${sessionKey}`);
+          api.logger.info?.(`[task-monitor] No parent sessionKey for: ${sessionKey}`);
           return;
         }
         
         // 5. 读取最新消息
         const messages = await readLastMessages(sessionFile, 2);
+        api.logger.info?.(`[task-monitor] Read ${messages.length} messages from transcript`);
         if (messages.length === 0) {
           return;
         }
@@ -1212,6 +1213,7 @@ const plugin = {
           }
         }
         
+        api.logger.info?.(`[task-monitor] Formatted ${formattedMessages.length} messages`);
         if (formattedMessages.length === 0) {
           return;
         }
