@@ -515,7 +515,22 @@ const plugin = {
       api.on("after_tool_call", async (event) => {
         try {
           const runId = event.runId || event.toolCallId;
+          const toolName = event.toolName || event.tool_name || event.name;
           const isError = !!event.error;
+          const result = event.result || event.output || event.error;
+          
+          // 监控 sessions_spawn 失败
+          if (toolName === 'sessions_spawn' && isError) {
+            const errorMsg = typeof result === 'string' ? result : JSON.stringify(result);
+            api.logger.error?.(`[task-monitor] sessions_spawn failed: ${errorMsg}`);
+            
+            // 发送告警
+            if (alertManager?.shouldAlert(`spawn_failed_${Date.now()}`, "spawn_failed")) {
+              const message = `❌ 子任务创建失败\n\n错误: ${errorMsg.slice(0, 500)}`;
+              await sendNotification("spawn_failed", message);
+              alertManager.recordAlert(`spawn_failed_${Date.now()}`, "spawn_failed");
+            }
+          }
           
           // 结束工具调用追踪
           activityTracker.endToolCall(event.toolCallId, isError);
