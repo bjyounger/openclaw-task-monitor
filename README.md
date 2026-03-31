@@ -1,6 +1,15 @@
 # OpenClaw Task Monitor Plugin
 
-Task monitoring plugin for OpenClaw with automatic retry mechanism, task chain tracking, and workspace configuration injection.
+Task monitoring plugin for OpenClaw with automatic retry mechanism, task chain tracking, three-layer memory architecture, and workspace configuration injection.
+
+## Quick Start
+
+**👉 [安装指南 / Installation Guide](workspace-templates/INSTALL.md)**
+
+```bash
+# 一键初始化三层记忆架构
+./scripts/init-memory-architecture.sh
+```
 
 ## Features
 
@@ -14,6 +23,24 @@ Task monitoring plugin for OpenClaw with automatic retry mechanism, task chain t
 - **Safe Execution**: Uses `spawn` with array parameters to prevent command injection
 - **Watchdog**: Cron-based fallback to ensure retries execute even if plugin restarts
 - **Notifications**: Send alerts via configured channel (WeCom, Telegram, etc.)
+
+### Three-Layer Memory Architecture (v12.0.1+)
+
+**自动初始化**：运行 `./scripts/init-memory-architecture.sh` 即可创建完整三层架构
+
+| Layer | Description | Storage | Lifecycle |
+|-------|-------------|---------|-----------|
+| **Working Memory** | Current session context | SESSION-STATE.md | Single session |
+| **Episodic Memory** | Task summaries, decisions, preferences | memory/episodic/ | Days/weeks |
+| **Long-term Memory** | User profile, important decisions | MEMORY.md | Permanent |
+
+**Features**:
+- ✅ Auto-consolidation on task completion (Layer 1 → Layer 2)
+- ✅ Periodic refinement (Layer 2 → Layer 3, every Sunday 22:00)
+- ✅ Access tracking (auto-promote high-frequency info)
+- ✅ Async I/O with file locking (non-blocking)
+
+**See [INSTALL.md](workspace-templates/INSTALL.md) for setup details.**
 
 ### Notification Configuration (v12.1+)
 

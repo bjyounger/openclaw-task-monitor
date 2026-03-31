@@ -1,0 +1,33 @@
+{
+  "version": "1.0",
+  "created": "YYYY-MM-DD",
+  "description": "三层记忆架构配置",
+  "layers": {
+    "working": {
+      "description": "工作记忆（会话级）",
+      "files": ["SESSION-STATE.md", "working-buffer.md"],
+      "lifecycle": "单次会话"
+    },
+    "episodic": {
+      "description": "情境记忆（天/周级）",
+      "dirs": ["decisions", "preferences", "people", "tasks/completed"],
+      "lifecycle": "7-30天"
+    },
+    "longterm": {
+      "description": "长效记忆（永久）",
+      "files": ["MEMORY.md"],
+      "dirs": ["knowledge-base"],
+      "lifecycle": "永久"
+    }
+  },
+  "consolidation": {
+    "enableAuto": true,
+    "triggers": ["task_completed", "user_correction", "decision_confirmed"],
+    "refinementSchedule": {
+      "dayOfWeek": 0,
+      "hour": 22,
+      "minute": 0
+    }
+  },
+  "accessThreshold": 3
+}
