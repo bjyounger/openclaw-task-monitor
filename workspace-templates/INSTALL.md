@@ -1,33 +1,34 @@
 # 安装指南
 
-## 快速安装
+## 快速安装（推荐）
 
-### 1. 安装 task-monitor 插件
+### 1. 克隆插件
 
 ```bash
-# 克隆插件
 cd ~/.openclaw/extensions
 git clone https://github.com/bjyounger/openclaw-task-monitor.git task-monitor
-
-# 安装依赖
 cd task-monitor
-pnpm install
-
-# 构建
-pnpm build
 ```
 
-### 2. 初始化三层记忆架构
+### 2. 安装依赖
 
 ```bash
-# 运行初始化脚本
-./scripts/init-memory-architecture.sh
-
-# 或指定工作区目录
-./scripts/init-memory-architecture.sh /path/to/workspace
+pnpm install
 ```
 
-### 3. 配置插件
+### 3. 运行安装后初始化
+
+```bash
+./scripts/post-install.sh
+```
+
+这个脚本会自动：
+- ✅ 从 config.example.json 创建 config.json
+- ✅ 初始化三层记忆架构（MEMORY.md、SESSION-STATE.md、memory/ 目录）
+- ✅ 检查 openclaw.json 配置完整性
+- ✅ 创建必要的目录结构
+
+### 4. 配置通知渠道
 
 编辑 `~/.openclaw/openclaw.json`：
 
@@ -39,14 +40,7 @@ pnpm build
       "config": {
         "notification": {
           "channel": "wecom",
-          "target": "your-user-id",
-          "enabled": true
-        },
-        "memory": {
-          "enableAutoConsolidation": true,
-          "enablePeriodicRefinement": true,
-          "consolidationPath": "~/.openclaw/workspace/memory",
-          "knowledgeBasePath": "~/.openclaw/workspace/memory/knowledge-base"
+          "target": "your-user-id"
         }
       }
     }
@@ -54,13 +48,13 @@ pnpm build
 }
 ```
 
-### 4. 重启 Gateway
+### 5. 重启 Gateway
 
 ```bash
 openclaw gateway restart
 ```
 
-### 5. 验证
+### 6. 验证
 
 ```bash
 # 检查插件加载
@@ -70,14 +64,52 @@ openclaw doctor
 ls -la ~/.openclaw/workspace/memory/
 
 # 检查日志
-tail -f ~/.openclaw/logs/gateway.log | grep -i memory
+tail -f ~/.openclaw/logs/gateway.log | grep -i task-monitor
+```
+
+---
+
+## 手动安装（详细步骤）
+
+如果需要手动控制每一步：
+
+### 1. 克隆并安装依赖
+
+```bash
+cd ~/.openclaw/extensions
+git clone https://github.com/bjyounger/openclaw-task-monitor.git task-monitor
+cd task-monitor
+pnpm install
+```
+
+### 2. 创建配置文件
+
+```bash
+# 从示例创建配置
+cp config.example.json config.json
+```
+
+### 3. 初始化三层记忆架构
+
+```bash
+./scripts/init-memory-architecture.sh
+```
+
+### 4. 配置通知
+
+编辑 `~/.openclaw/openclaw.json` 添加 notification 配置。
+
+### 5. 重启 Gateway
+
+```bash
+openclaw gateway restart
 ```
 
 ---
 
 ## 三层记忆架构
 
-安装后会自动创建以下结构：
+安装后自动创建以下结构：
 
 ```
 ~/.openclaw/workspace/
@@ -102,37 +134,58 @@ tail -f ~/.openclaw/logs/gateway.log | grep -i memory
 
 ---
 
-## 功能说明
+## 配置注入（可选）
 
-### 自动沉淀（第一层 → 第二层）
+`workspace-templates/inject-config.json` 定义了需要注入到 AGENTS.md 和 HEARTBEAT.md 的内容：
 
-任务完成时自动生成摘要并存储到 `memory/tasks/completed/`
+| 注入项 | 目标文件 | 说明 |
+|--------|----------|------|
+| `agents-verification` | AGENTS.md | 验证铁律：证据先于断言 |
+| `agents-debugging` | AGENTS.md | 系统化调试流程 |
+| `agents-planning` | AGENTS.md | 强制规划流程 |
+| `heartbeat-debugging` | HEARTBEAT.md | 调试四阶段流程 |
 
-### 定期提炼（第二层 → 第三层）
-
-每周日 22:00 自动检查情境记忆，将高频信息提升到 MEMORY.md
-
-### 访问追踪
-
-记录信息被检索的次数，超过阈值自动提升
+**注意**：配置注入需要手动合并或集成到启动流程。可参考 `workspace-templates/AGENTS.md.template` 和 `workspace-templates/HEARTBEAT.md.template`。
 
 ---
 
-## 配置选项
+## 完整配置选项
 
 ```json
 {
-  "memory": {
-    "enableAutoConsolidation": true,    // 启用自动沉淀
-    "enablePeriodicRefinement": true,   // 启用定期提炼
-    "consolidationPath": "path/to/memory",
-    "knowledgeBasePath": "path/to/knowledge-base",
-    "refinementSchedule": {
-      "dayOfWeek": 0,    // 0=周日, 1=周一, ...
-      "hour": 22,
-      "minute": 0
-    },
-    "accessThreshold": 3  // 提炼阈值
+  "extensions": {
+    "task-monitor": {
+      "enabled": true,
+      "config": {
+        "notification": {
+          "channel": "wecom",
+          "target": "your-user-id",
+          "enabled": true,
+          "throttle": 3000,
+          "maxMessageLength": 4096
+        },
+        "monitoring": {
+          "subtaskTimeout": 1800000,
+          "mainTaskTimeout": 86400000,
+          "stalledThreshold": 1800000
+        },
+        "retry": {
+          "maxRetries": 2,
+          "retryDelayMs": 60000
+        },
+        "memory": {
+          "enableAutoConsolidation": true,
+          "enablePeriodicRefinement": true,
+          "consolidationPath": "~/.openclaw/workspace/memory",
+          "knowledgeBasePath": "~/.openclaw/workspace/memory/knowledge-base"
+        },
+        "maintenance": {
+          "sessionRetentionDays": 30,
+          "configBackupIntervalHours": 1,
+          "healthCheckEnabled": true
+        }
+      }
+    }
   }
 }
 ```
@@ -150,6 +203,9 @@ cat ~/.openclaw/extensions/task-monitor/openclaw.plugin.json
 # 检查依赖
 cd ~/.openclaw/extensions/task-monitor
 pnpm install
+
+# 检查 Gateway 日志
+tail -f ~/.openclaw/logs/gateway.log | grep -i error
 ```
 
 ### Memory 模块未初始化
@@ -160,16 +216,19 @@ pnpm install
 
 # 检查目录权限
 ls -la ~/.openclaw/workspace/memory/
+
+# 检查配置
+cat ~/.openclaw/openclaw.json | jq '.extensions["task-monitor"].config.memory'
 ```
 
-### 日志中无 memory 相关信息
+### 通知未收到
 
 ```bash
-# 检查配置是否正确
-cat ~/.openclaw/openclaw.json | jq '.extensions.task-monitor.config.memory'
+# 检查 notification 配置
+cat ~/.openclaw/openclaw.json | jq '.extensions["task-monitor"].config.notification'
 
-# 重启 Gateway
-openclaw gateway restart
+# 测试发送
+openclaw message send --channel wecom --target your-user-id --message "测试"
 ```
 
 ---
@@ -180,7 +239,6 @@ openclaw gateway restart
 cd ~/.openclaw/extensions/task-monitor
 git pull
 pnpm install
-pnpm build
 openclaw gateway restart
 ```
 
@@ -198,3 +256,21 @@ rm -rf ~/.openclaw/extensions/task-monitor
 # 移除配置
 # 编辑 ~/.openclaw/openclaw.json 移除 task-monitor 配置
 ```
+
+---
+
+## 检查清单
+
+安装完成后，请确认以下项目：
+
+- [ ] `config.json` 存在于插件目录
+- [ ] `~/.openclaw/workspace/MEMORY.md` 存在
+- [ ] `~/.openclaw/workspace/SESSION-STATE.md` 存在
+- [ ] `~/.openclaw/workspace/memory/` 目录结构完整
+- [ ] `openclaw.json` 中配置了 notification
+- [ ] Gateway 重启后插件加载成功
+- [ ] 日志中出现 `[task-monitor] Plugin registered`
+
+---
+
+*更新日期: 2026-04-01*
