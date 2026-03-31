@@ -1192,6 +1192,9 @@ const plugin = {
           // 主任务处理：检测任务开始和完成
           api.logger.info?.(`[task-monitor] Main task transcript detected: ${sessionKey}`);
           
+          // 更新 StateManager heartbeat（防止误判超时）
+          await stateManager?.heartbeat(sessionKey);
+          
           // 读取最后几条消息
           const messages = await readLastMessages(sessionFile, 5);
           if (messages.length === 0) return;
