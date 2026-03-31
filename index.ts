@@ -1612,11 +1612,24 @@ const plugin = {
       }
       // 清理 InterruptHandler
       interruptHandler.shutdown();
+      // 清理 MessageQueue 定时器
+      messageQueue.stopPeriodicCheck();
       api.logger.info?.("[task-monitor] Cleanup complete");
     };
 
     process.on("SIGTERM", cleanup);
     process.on("SIGINT", cleanup);
+    
+    // #17: 异常退出时也清理定时器
+    process.on("uncaughtException", (error) => {
+      api.logger.error?.("[task-monitor] Uncaught exception:", error);
+      cleanup();
+    });
+    
+    process.on("unhandledRejection", (reason) => {
+      api.logger.error?.("[task-monitor] Unhandled rejection:", reason);
+      cleanup();
+    });
 
     api.logger.info?.("[task-monitor] Plugin registration complete (v12)");
   },

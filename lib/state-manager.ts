@@ -426,7 +426,9 @@ export class StateManager {
       
       for (const task of state.tasks) {
         // 检查是否超时 (基于最后心跳时间)
-        if (now - task.lastHeartbeat > task.timeoutMs && task.status === 'running') {
+        // 支持 running 和 scheduled 状态的超时检查
+        const isActive = task.status === 'running' || task.status === 'scheduled';
+        if (now - task.lastHeartbeat > task.timeoutMs && isActive) {
           task.status = 'timeout';
           timedOutTasks.push(task);
         }

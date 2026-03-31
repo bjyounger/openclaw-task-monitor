@@ -56,6 +56,7 @@ const DEFAULT_CONFIG: MessageQueueConfig = {
  * - 消息出队并发送（当连接恢复时）
  * - 队列大小限制
  * - 重试次数限制
+ * - 定时检查机制（避免无限等待）
  */
 export class MessageQueue {
   /** 队列存储 */
@@ -76,6 +77,9 @@ export class MessageQueue {
   /** 消息ID计数器 */
   private messageIdCounter: number = 0;
 
+  /** 定时检查定时器 */
+  private checkTimer: NodeJS.Timeout | null = null;
+
   constructor(config: Partial<MessageQueueConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
     // 从环境变量或默认值初始化
@@ -90,6 +94,35 @@ export class MessageQueue {
     };
     
     console.log(`[task-monitor] MessageQueue initialized, maxQueueSize=${this.config.maxQueueSize}, maxRetries=${this.config.maxRetries}`);
+    
+    // 启动定时检查（每 30 秒检查一次队列）
+    this.startPeriodicCheck();
+  }
+
+  /**
+   * 启动定时检查
+   */
+  private startPeriodicCheck(): void {
+    if (this.checkTimer) {
+      clearInterval(this.checkTimer);
+    }
+    
+    this.checkTimer = setInterval(() => {
+      if (this.queue.length > 0 && this.isConnected && !this.isProcessing) {
+        console.log(`[task-monitor] Periodic check: flushing queue (${this.queue.length} messages)`);
+        this.flushQueue();
+      }
+    }, 30000); // 30 秒检查一次
+  }
+
+  /**
+   * 停止定时检查
+   */
+  public stopPeriodicCheck(): void {
+    if (this.checkTimer) {
+      clearInterval(this.checkTimer);
+      this.checkTimer = null;
+    }
   }
 
   /**

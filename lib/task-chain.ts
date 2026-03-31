@@ -6,7 +6,7 @@ import * as path from 'path';
 /**
  * 任务链状态
  */
-export type TaskChainStatus = "dispatching" | "waiting" | "completed" | "timeout" | "orphaned";
+export type TaskChainStatus = "dispatching" | "waiting" | "completed" | "failed" | "timeout" | "orphaned";
 
 /**
  * 子任务状态
@@ -49,6 +49,8 @@ export interface TaskChain {
   createdAt: number;
   /** 最后更新时间 */
   updatedAt: number;
+  /** 最后活跃时间 (用于超时判断) */
+  lastActivityAt: number;
   /** 超时时间 (毫秒) */
   timeoutMs: number;
   /** 主任务标签 */
@@ -232,6 +234,7 @@ export class TaskChainManager {
         subtasks: [],
         createdAt: now,
         updatedAt: now,
+        lastActivityAt: now,
         timeoutMs: params.timeoutMs ?? TaskChainManager.DEFAULT_TIMEOUT_MS,
         label: params.label,
       };
@@ -268,6 +271,7 @@ export class TaskChainManager {
       file.chains[chainIndex].subtasks.push(newSubtask);
       file.chains[chainIndex].status = "waiting";
       file.chains[chainIndex].updatedAt = now;
+      file.chains[chainIndex].lastActivityAt = now;
       
       this.writeFile(file);
       return file.chains[chainIndex];
@@ -306,15 +310,20 @@ export class TaskChainManager {
       };
       
       // 检查是否所有子任务都完成
-      const allCompleted = file.chains[chainIndex].subtasks.every(
+      const subtasks = file.chains[chainIndex].subtasks;
+      const allCompleted = subtasks.every(
         s => s.status === 'completed' || s.status === 'failed' || s.status === 'timeout'
       );
       
       if (allCompleted) {
-        file.chains[chainIndex].status = "completed";
+        // 区分全部成功和有失败的情况
+        const hasFailure = subtasks.some(s => s.status === 'failed' || s.status === 'timeout');
+        file.chains[chainIndex].status = hasFailure ? "failed" : "completed";
       }
       
-      file.chains[chainIndex].updatedAt = Date.now();
+      const now = Date.now();
+      file.chains[chainIndex].updatedAt = now;
+      file.chains[chainIndex].lastActivityAt = now;
       this.writeFile(file);
       
       return file.chains[chainIndex];
@@ -376,8 +385,8 @@ export class TaskChainManager {
           continue;
         }
         
-        // 检查是否超时
-        if (now - chain.createdAt > chain.timeoutMs) {
+        // 检查是否超时 (基于最后活跃时间，而非创建时间)
+        if (now - chain.lastActivityAt > chain.timeoutMs) {
           chain.status = 'timeout';
           chain.updatedAt = now;
           timedOutChains.push(chain);
