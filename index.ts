@@ -1170,6 +1170,9 @@ const plugin = {
     // transcript 节流控制（独立于 agent event）
     const transcriptLastSentMap = new Map<string, number>();
     
+    // 主任务追踪（用于检测任务完成）
+    const mainTaskTracking = new Map<string, { startTime: number; lastCheck: number }>();
+    
     api.runtime.events.onSessionTranscriptUpdate(async (update) => {
       try {
         if (!streamConfig.streamToParent) return;
@@ -1184,10 +1187,94 @@ const plugin = {
           return;
         }
         
-        // 2. 判断是否是子任务会话
+        // 2. 判断是否是主任务会话
         if (!isSubagentSessionKey(sessionKey)) {
-          api.logger.info?.(`[task-monitor] Not a subagent session, skipping: ${sessionKey}`);
-          return; // 不是子任务，忽略
+          // 主任务处理：检测任务开始和完成
+          api.logger.info?.(`[task-monitor] Main task transcript detected: ${sessionKey}`);
+          
+          // 读取最后几条消息
+          const messages = await readLastMessages(sessionFile, 5);
+          if (messages.length === 0) return;
+          
+          // 检测任务完成：查找包含"任务完成"或类似标记的消息
+          const lastUserMsg = messages.filter(m => m.role === 'user').pop();
+          const lastAssistantMsg = messages.filter(m => m.role === 'assistant').pop();
+          
+          // 判断是否是任务完成（基于 assistant 消息内容）
+          if (lastAssistantMsg) {
+            const content = JSON.stringify(lastAssistantMsg.content || '');
+            const isCompletion = content.includes('任务完成') || 
+                                 content.includes('✅') ||
+                                 content.includes('已完成') ||
+                                 content.includes('DONE');
+            
+            // 获取或创建任务追踪
+            let tracking = mainTaskTracking.get(sessionKey);
+            if (!tracking) {
+              tracking = { startTime: Date.now(), lastCheck: Date.now() };
+              mainTaskTracking.set(sessionKey, tracking);
+              
+              // 创建任务文件
+              const taskName = `main-${sessionKey.split(':').pop()}-${new Date().toISOString().slice(0,16).replace(/[:.]/g, '-')}`;
+              const taskFilePath = path.join(TASKS_DIR, "running", `${taskName}.md`);
+              
+              if (!fs.existsSync(taskFilePath)) {
+                const taskContent = `# 主任务记录
+
+**任务ID**: ${sessionKey}
+**状态**: running
+**开始时间**: ${new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })}
+**来源**: transcript 检测（lifecycle 事件不可用）
+
+---
+*此文件由 task-monitor 自动创建*
+`;
+                fs.mkdirSync(path.dirname(taskFilePath), { recursive: true });
+                fs.writeFileSync(taskFilePath, taskContent);
+                api.logger.info?.(`[task-monitor] Main task file created: ${taskName}`);
+              }
+            }
+            
+            // 如果检测到完成
+            if (isCompletion && tracking) {
+              const elapsed = Date.now() - tracking.startTime;
+              // 避免误判：至少 30 秒
+              if (elapsed > 30000) {
+                api.logger.info?.(`[task-monitor] Main task completion detected: ${sessionKey}`);
+                
+                // 更新 StateManager
+                await stateManager?.updateTask(sessionKey, { 
+                  status: 'completed',
+                  metadata: { completedAt: Date.now() }
+                });
+                
+                // 发送完成通知
+                const taskName = sessionKey.split(':').pop() || 'unknown';
+                const alertId = `main_completed_${taskName}`;
+                
+                if (alertManager?.shouldAlert(alertId, "main_completed")) {
+                  const notifyMessage = `✅ 主任务完成\n\n任务: ${taskName}\n时间: ${new Date().toLocaleString("zh-CN")}`;
+                  try {
+                    execSync(
+                      `openclaw message send --channel "${config.notification.channel}" --target "${config.notification.target}" --message "${notifyMessage.replace(/\n/g, '\\n')}"`,
+                      { timeout: 15000, stdio: 'pipe' }
+                    );
+                    alertManager.recordAlert(alertId, "main_completed");
+                    api.logger.info?.(`[task-monitor] Main task completion notification sent: ${taskName}`);
+                  } catch (e) {
+                    api.logger.error?.(`[task-monitor] Failed to send completion notification: ${e}`);
+                  }
+                }
+                
+                // 清理追踪
+                mainTaskTracking.delete(sessionKey);
+              }
+            }
+            
+            tracking.lastCheck = Date.now();
+          }
+          
+          return; // 主任务处理完毕
         }
         
         api.logger.info?.(`[task-monitor] Subagent transcript detected: ${sessionKey}`);
