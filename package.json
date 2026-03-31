@@ -10,10 +10,13 @@
   "peerDependencies": {
     "openclaw": ">=2026.3.0"
   },
-  "dependencies": {},
+  "dependencies": {
+    "proper-lockfile": "^4.1.2"
+  },
   "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/proper-lockfile": "^4.1.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.0",
-    "@types/node": "^20.0.0"
+    "typescript": "^5.4.0"
   }
 }

@@ -160,6 +160,25 @@ export class AlertManager {
     message: string,
     alertType: string
   ): Promise<boolean> {
+    return this.sendAlertToTarget(taskId, message, alertType);
+  }
+
+  /**
+   * 发送告警到指定目标（支持动态覆盖 channel/target）
+   * @param taskId 任务ID
+   * @param message 告警消息内容
+   * @param alertType 告警类型
+   * @param overrideChannel 可选的覆盖频道
+   * @param overrideTarget 可选的覆盖目标
+   * @returns Promise<boolean> 发送是否成功
+   */
+  public async sendAlertToTarget(
+    taskId: string,
+    message: string,
+    alertType: string,
+    overrideChannel?: string,
+    overrideTarget?: string
+  ): Promise<boolean> {
     // 检查是否应该发送告警
     if (!this.shouldAlert(taskId, alertType)) {
       return false;
@@ -169,8 +188,12 @@ export class AlertManager {
       // 构建完整的告警消息
       const fullMessage = `[${alertType}] 任务 ${taskId}: ${message}`;
 
+      // 使用覆盖参数或默认配置
+      const channel = overrideChannel || this.config.channel;
+      const target = overrideTarget || this.config.target;
+
       // 使用 child_process.exec 调用 openclaw message send
-      const command = `openclaw message send --channel "${this.config.channel}" --target "${this.config.target}" --message "${this.escapeMessage(fullMessage)}"`;
+      const command = `openclaw message send --channel "${channel}" --target "${target}" --message "${this.escapeMessage(fullMessage)}"`;
 
       console.log(`[AlertManager] 发送告警命令: ${command}`);
 
@@ -187,7 +210,7 @@ export class AlertManager {
       // 记录告警
       this.recordAlert(taskId, alertType);
 
-      console.log(`[AlertManager] 告警发送成功: taskId=${taskId}, alertType=${alertType}`);
+      console.log(`[AlertManager] 告警发送成功: taskId=${taskId}, alertType=${alertType}, channel=${channel}, target=${target}`);
       return true;
     } catch (error) {
       console.error('[AlertManager] 发送告警失败:', error);

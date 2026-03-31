@@ -16,11 +16,13 @@ import {
   getInterruptHandler,
   HealthChecker,
   getHealthChecker,
+  MemoryManager,
   type TaskState, 
   type ScheduledRetry,
   type TaskMonitorConfig,
   type ActivityState,
   type SessionType,
+  type MemoryConfig,
 } from "./lib";
 
 // ==================== Session Key 辅助函数 ====================
@@ -256,6 +258,62 @@ async function findSessionKeyByFile(sessionFile: string): Promise<string | null>
 }
 
 /**
+ * 获取会话的频道信息
+ * @param sessionKey 会话 key
+ * @returns 频道信息 {channel, target} 或 null
+ */
+function getSessionChannelInfo(sessionKey: string): { channel: string; target: string } | null {
+  try {
+    // 从 sessionKey 提取 agentId（格式: agent:main:xxx 或 agent:subagent:xxx）
+    const parts = sessionKey.split(":");
+    const agentId = parts[1] || "main";
+    
+    const sessionsJsonPath = path.join(
+      process.env.HOME || "/root",
+      ".openclaw/agents",
+      agentId,
+      "sessions/sessions.json"
+    );
+    
+    if (!fs.existsSync(sessionsJsonPath)) {
+      return null;
+    }
+    
+    const content = fs.readFileSync(sessionsJsonPath, "utf-8");
+    const sessions = JSON.parse(content);
+    
+    const entry = sessions[sessionKey] as any;
+    if (!entry) {
+      return null;
+    }
+    
+    // 提取频道信息
+    const channel = entry.lastChannel || entry.deliveryContext?.channel || entry.origin?.provider || null;
+    
+    // 提取目标信息
+    // Telegram: sessionKey 格式为 agent:main:telegram:direct:8665573247
+    // 企业微信: sessionKey 格式为 agent:main:wecom:direct:yangke
+    let target = null;
+    if (entry.deliveryContext?.to) {
+      // deliveryContext.to 格式: "telegram:8665573247" 或 "wecom:YangKe"
+      target = entry.deliveryContext.to.split(":")[1];
+    } else if (parts.length >= 5 && parts[4]) {
+      // 从 sessionKey 提取
+      target = parts[4];
+    }
+    
+    if (channel && target) {
+      return { channel, target };
+    }
+    
+    return null;
+  } catch (e) {
+    console.error("[task-monitor] Error in getSessionChannelInfo:", e);
+    return null;
+  }
+}
+
+/**
  * 获取子任务深度（使用 SDK 函数）
  */
 function getSubagentDepthLocal(sessionKey: string): number {
@@ -312,6 +370,9 @@ function formatAgentEvent(evt: any, config: StreamConfig): string | null {
 let stateManager: StateManager | null = null;
 let alertManager: AlertManager | null = null;
 let taskChainManager: TaskChainManager | null = null;
+
+// 任务频道映射：sessionKey → {channel, target}
+const taskChannelMap = new Map<string, { channel: string; target: string }>();
 
 interface SubagentSpawnedPayload {
   childSessionKey: string;
@@ -388,14 +449,28 @@ async function executeRetrySafely(
  * 发送通知（通过 AlertManager，支持去重和冷却期）
  * 如果发送失败，将消息加入队列等待重试
  */
-async function sendNotification(alertType: string, message: string): Promise<void> {
+async function sendNotification(alertType: string, message: string, channel?: string, target?: string): Promise<void> {
   if (!alertManager) {
     console.error("[task-monitor] AlertManager not initialized");
     return;
   }
   
+  // 如果未提供 channel/target，从 taskChannelMap 中查找当前任务
+  if (!channel || !target) {
+    // 尝试从最近的任务中获取频道信息
+    for (const [sessionKey, info] of taskChannelMap.entries()) {
+      if (!channel) channel = info.channel;
+      if (!target) target = info.target;
+      break; // 使用最新的一条
+    }
+  }
+  
+  // 最终 fallback 到配置默认值
+  channel = channel || config.notification.channel;
+  target = target || config.notification.target;
+  
   try {
-    const sent = await alertManager.sendAlert(alertType, message, alertType);
+    const sent = await alertManager.sendAlertToTarget(alertType, message, alertType, channel, target);
     if (!sent) {
       // 发送失败，加入消息队列
       console.warn("[task-monitor] Alert send returned false, queuing message");
@@ -472,6 +547,20 @@ const plugin = {
     healthChecker.initialize(api, alertManager, activityTracker);
     
     api.logger.info?.("[task-monitor] Activity detection initialized (Layer 1)");
+    
+    // ==================== 新增：Memory Manager 初始化 ====================
+    const workspaceDir = api.config?.workspaceDir || '/root/.openclaw/workspace';
+    const memoryConfig: MemoryConfig = {
+      enableAutoConsolidation: config.memory?.enableAutoConsolidation ?? true,
+      enablePeriodicRefinement: config.memory?.enablePeriodicRefinement ?? true,
+      consolidationPath: config.memory?.consolidationPath || path.join(workspaceDir, 'memory'),
+      knowledgeBasePath: config.memory?.knowledgeBasePath || path.join(workspaceDir, 'memory/knowledge-base'),
+      refinementSchedule: { dayOfWeek: 0, hour: 22, minute: 0 },
+      accessThreshold: 5
+    };
+    const memoryManager = new MemoryManager(memoryConfig, stateManager, api);
+    memoryManager.startPeriodicRefinement();
+    api.logger.info?.("[task-monitor] Memory manager initialized");
     
     // ==================== 新增：钩子注册 ====================
     // 注册 before_tool_call 钩子
@@ -727,22 +816,72 @@ const plugin = {
         const timedOutTasks = await stateManager.checkTimeouts();
         for (const task of timedOutTasks) {
           api.logger.warn?.(`[task-monitor] Task timeout: ${task.id}`);
-          await alertManager?.sendAlert(
-            task.id,
-            `任务超时！类型: ${task.type}, 运行时间: ${Math.floor((Date.now() - task.startTime) / 60000)} 分钟`,
-            "timeout"
-          );
+          
+          // 获取动态频道（优先级：metadata > taskChannelMap > 最近主任务）
+          let channelInfo = null;
+          
+          // 1. 从 task.metadata 读取（最可靠）
+          if (task.metadata?.channel && task.metadata?.target) {
+            channelInfo = {
+              channel: task.metadata.channel as string,
+              target: task.metadata.target as string
+            };
+          }
+          
+          // 2. 从 taskChannelMap 读取
+          if (!channelInfo) {
+            channelInfo = taskChannelMap.get(task.id);
+          }
+          
+          // 3. 如果是 exec 类型，尝试从 sessionKey 获取
+          if (!channelInfo && task.type === 'exec' && task.metadata?.sessionKey) {
+            channelInfo = getSessionChannelInfo(task.metadata.sessionKey as string);
+          }
+          
+          // 4. 最后尝试最近的主任务频道
+          if (!channelInfo && task.type === 'exec' && taskChannelMap.size > 0) {
+            const lastEntry = Array.from(taskChannelMap.entries()).pop();
+            if (lastEntry) {
+              channelInfo = lastEntry[1];
+              api.logger.info?.(`[task-monitor] Using latest channel for exec task: ${lastEntry[0]}`);
+            }
+          }
+          
+          const message = `任务超时！类型: ${task.type}, 运行时间: ${Math.floor((Date.now() - task.startTime) / 60000)} 分钟`;
+          
+          if (channelInfo) {
+            await alertManager?.sendAlertToTarget(
+              task.id,
+              message,
+              "timeout",
+              channelInfo.channel,
+              channelInfo.target
+            );
+          } else {
+            await alertManager?.sendAlert(task.id, message, "timeout");
+          }
         }
 
         // 任务链超时检查
         const timedOutChains = await taskChainManager.checkTimeouts();
         for (const chain of timedOutChains) {
           api.logger.warn?.(`[task-monitor] Task chain timeout: ${chain.mainTaskId}`);
-          await alertManager?.sendAlert(
-            chain.mainTaskId,
-            `任务链超时！\n\n主任务: ${chain.label || chain.mainTaskId}\n子任务数: ${chain.subtasks.length}\n运行时间: ${Math.floor((Date.now() - chain.createdAt) / 60000)} 分钟`,
-            "chain_timeout"
-          );
+          
+          // 尝试从 taskChannelMap 获取动态频道
+          const channelInfo = taskChannelMap.get(chain.mainTaskId);
+          const message = `任务链超时！\n\n主任务: ${chain.label || chain.mainTaskId}\n子任务数: ${chain.subtasks.length}\n运行时间: ${Math.floor((Date.now() - chain.createdAt) / 60000)} 分钟`;
+          
+          if (channelInfo) {
+            await alertManager?.sendAlertToTarget(
+              chain.mainTaskId,
+              message,
+              "chain_timeout",
+              channelInfo.channel,
+              channelInfo.target
+            );
+          } else {
+            await alertManager?.sendAlert(chain.mainTaskId, message, "chain_timeout");
+          }
         }
 
         // ==================== 主任务完成检测 ====================
@@ -1032,6 +1171,10 @@ const plugin = {
 `;
                   
                   fs.writeFileSync(taskFilePath, taskContent, "utf-8");
+                  
+                  // 更新任务频道映射
+                  taskChannelMap.set(evt.sessionKey, { channel, target: notifyTarget });
+                  
                   api.logger.info?.(`[task-monitor] Auto-created task record: ${taskFileName} (channel: ${channel}, notifyTarget: ${notifyTarget})`);
                 }
               } catch (error) {
@@ -1101,6 +1244,13 @@ const plugin = {
                 }
               } catch (error) {
                 api.logger.error?.(`[task-monitor] Failed to update task status: ${error}`);
+              }
+              
+              // Memory: 处理任务完成，生成摘要
+              if (evt.runId) {
+                memoryManager.handleTaskCompletion(evt.runId).catch(err => {
+                  api.logger.error?.(`[memory] Failed to handle completion:`, err);
+                });
               }
             }
           }
@@ -1209,6 +1359,13 @@ const plugin = {
           
           // 更新 StateManager heartbeat（防止误判超时）
           await stateManager?.heartbeat(sessionKey);
+          
+          // 更新任务频道映射
+          const channelInfo = getSessionChannelInfo(sessionKey);
+          if (channelInfo) {
+            taskChannelMap.set(sessionKey, channelInfo);
+            api.logger.info?.(`[task-monitor] Task channel updated: ${sessionKey} -> ${channelInfo.channel}:${channelInfo.target}`);
+          }
           
           // 读取最后几条消息
           const messages = await readLastMessages(sessionFile, 5);
@@ -1617,6 +1774,10 @@ const plugin = {
           const minTimeout = 30000; // 30 秒最小超时
           const execTimeout = Math.max(params.timeout || 0, minTimeout);
           
+          // 获取当前任务的频道信息
+          const sessionKey = (event as any).sessionKey;
+          const channelInfo = sessionKey ? getSessionChannelInfo(sessionKey) : null;
+          
           try {
             await stateManager.registerTask({
               id: execId,
@@ -1627,7 +1788,9 @@ const plugin = {
               metadata: {
                 command: command.slice(0, 500),
                 toolName: event.toolName,
-                sessionKey: (event as any).sessionKey,
+                sessionKey: sessionKey,
+                channel: channelInfo?.channel,
+                target: channelInfo?.target,
               },
             });
           } catch (e: any) {
@@ -1705,7 +1868,7 @@ const plugin = {
     });
 
     // ==================== 清理定时器 ====================
-    const cleanup = () => {
+    const cleanup = async () => {
       clearInterval(timeoutChecker);
       clearInterval(retryChecker);
       clearInterval(cleanupChecker);
@@ -1719,11 +1882,13 @@ const plugin = {
       interruptHandler.shutdown();
       // 清理 MessageQueue 定时器
       messageQueue.stopPeriodicCheck();
+      // 清理 MemoryManager
+      await memoryManager.destroy();
       api.logger.info?.("[task-monitor] Cleanup complete");
     };
 
-    process.on("SIGTERM", cleanup);
-    process.on("SIGINT", cleanup);
+    process.on("SIGTERM", () => { cleanup(); });
+    process.on("SIGINT", () => { cleanup(); });
     
     // #17: 异常退出时也清理定时器
     process.on("uncaughtException", (error) => {

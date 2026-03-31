@@ -74,3 +74,17 @@ export type {
   HealthStatus,
   HealthCheckerConfig,
 } from './health-checker';
+
+// 新增：记忆管理模块
+export {
+  MemoryManager,
+  TaskSummaryGenerator,
+  KeywordExtractor,
+  EpisodicMemoryStorage,
+  AccessTracker,
+} from './memory';
+export type {
+  MemoryConfig,
+  TaskSummary,
+  TranscriptExtractor,
+} from './memory';

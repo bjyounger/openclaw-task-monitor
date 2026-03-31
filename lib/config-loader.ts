@@ -83,6 +83,20 @@ export interface DegradationConfig {
   fallbackToLayer4Only: boolean;
 }
 
+/**
+ * 记忆管理配置
+ */
+export interface MemoryModuleConfig {
+  /** 是否启用自动巩固（任务完成时生成摘要） */
+  enableAutoConsolidation?: boolean;
+  /** 是否启用定期提炼 */
+  enablePeriodicRefinement?: boolean;
+  /** 情境记忆存储路径 */
+  consolidationPath?: string;
+  /** 知识库路径 */
+  knowledgeBasePath?: string;
+}
+
 export interface TaskMonitorConfig {
   version: string;
   monitoring: {
@@ -137,6 +151,7 @@ export interface TaskMonitorConfig {
   healthCheck?: HealthCheckConfig;
   alertDeduplication?: AlertDeduplicationConfig;
   degradation?: DegradationConfig;
+  memory?: MemoryModuleConfig;
 }
 
 // ==================== 默认配置 ====================
@@ -259,6 +274,12 @@ const DEFAULT_CONFIG: TaskMonitorConfig = {
   degradation: {
     enabled: true,
     fallbackToLayer4Only: true,
+  },
+  
+  // 新增：记忆管理配置
+  memory: {
+    enableAutoConsolidation: true,
+    enablePeriodicRefinement: true,
   },
 };
 
