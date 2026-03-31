@@ -48,18 +48,27 @@ fi
 
 # ==================== 3. 配置注入 ====================
 log ""
-log "3. 检查配置注入..."
-INJECT_CONFIG="$PLUGIN_DIR/workspace-templates/inject-config.json"
+log "3. 执行配置注入..."
 
-if [ -f "$INJECT_CONFIG" ]; then
-    log "   发现 inject-config.json，配置注入功能可用"
-    log "   注入项："
-    cat "$INJECT_CONFIG" | jq -r '.injectables[] | "     - \(.id): \(.description)"' 2>/dev/null || true
-    log ""
-    log "   ⚠️ 配置注入需要手动触发或集成到 Gateway 启动流程"
-    log "   当前状态：AGENTS.md/HEARTBEAT.md 需要手动合并模板内容"
+if [ -x "$PLUGIN_DIR/node_modules/.bin/ts-node" ]; then
+    # 检查注入状态
+    INJECT_STATUS=$(cd "$PLUGIN_DIR" && npx ts-node scripts/inject-config.ts --check 2>&1)
+    INJECT_EXIT_CODE=$?
+
+    if [ $INJECT_EXIT_CODE -eq 0 ]; then
+        log "   ✓ 所有配置项已注入"
+    else
+        log "   检测到未注入的配置项，正在注入..."
+        # 执行注入
+        cd "$PLUGIN_DIR" && npx ts-node scripts/inject-config.ts --inject 2>&1 || {
+            log "   ⚠️ 配置注入失败，请手动执行:"
+            log "      cd $PLUGIN_DIR && npx ts-node scripts/inject-config.ts --inject"
+        }
+    fi
 else
-    log "   ⚠️ inject-config.json 不存在"
+    log "   ⚠️ ts-node 不可用，跳过自动注入"
+    log "   请手动执行配置注入:"
+    log "      cd $PLUGIN_DIR && npx ts-node scripts/inject-config.ts --inject"
 fi
 
 # ==================== 4. 检查 openclaw.json 配置 ====================
