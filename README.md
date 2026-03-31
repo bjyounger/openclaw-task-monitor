@@ -403,60 +403,6 @@ npm install
 - Network dependency (npm registry)
 - May fail if dependencies have issues
 
-### Option B: Pre-compiled Package (Recommended)
-
-```bash
-cd ~/.openclaw/extensions
-# Download pre-compiled package
-wget https://github.com/bjyounger/openclaw-task-monitor/releases/download/v12.0.0/task-monitor.tgz
-tar -xzf task-monitor.tgz
-# Done! No npm install needed
-```
-
-**Pros**:
-- One-step installation
-- No network dependency after download
-- All dependencies bundled
-- Guaranteed to work (tested before release)
-
-**Cons**:
-- Larger package size
-- Requires build process before release
-- Less flexible (can't customize dependencies)
-
-### Recommendation
-
-**Use Option B (Pre-compiled Package)** for production deployments.
-
-Benefits:
-1. **Faster installation**: One command vs three
-2. **More reliable**: No npm install failures
-3. **Better for automation**: CI/CD pipelines can download and extract
-4. **Consistent behavior**: Same code for all users
-
-Implementation:
-```bash
-# Build script (for maintainers)
-npm install
-npm run build
-npm pack
-# Upload task-monitor-*.tgz to GitHub Releases
-```
-
-### Migration Guide
-
-If currently using Option A:
-
-```bash
-# Remove old installation
-rm -rf ~/.openclaw/extensions/task-monitor
-
-# Install pre-compiled version
-cd ~/.openclaw/extensions
-wget https://github.com/bjyounger/openclaw-task-monitor/releases/latest/download/task-monitor.tgz
-tar -xzf task-monitor.tgz
-```
-
 ---
 
 ## Version History
@@ -464,7 +410,7 @@ tar -xzf task-monitor.tgz
 | Version | Date | Changes |
 |---------|------|---------|
 | **v12.0.1** | 2026-03-31 | Bug fixes (P0/P1/P2), main task completion detection |
-| v12.0.0 | 2026-03-26 | Config injection, pre-compiled packaging, OpenClaw 3.22 compat |
+| v12.0.0 | 2026-03-26 | Config injection, OpenClaw 3.22 compat |
 | v11.0.0 | 2026-03-24 | Auto task record, main task monitoring |
 | v10.0.0 | 2026-03-23 | Task chain tracking, timeout detection |
 | v9.0.0 | 2026-03-22 | Message queue for notifications |
@@ -493,26 +439,18 @@ tar -xzf task-monitor.tgz
 
 **Installation**:
 ```bash
-wget https://github.com/bjyounger/openclaw-task-monitor/releases/download/v12.0.1/task-monitor-12.0.1.tgz
-tar -xzf task-monitor-12.0.1.tgz
-mv task-monitor-12.0.1 ~/.openclaw/extensions/task-monitor
+cd ~/.openclaw/extensions
+git clone https://github.com/bjyounger/openclaw-task-monitor.git task-monitor
+cd task-monitor
+pnpm install
 ```
 
 ### v12.0.0 (2026-03-26)
 
 **New Features**:
 - Config injection for workspace templates
-- Pre-compiled packaging support
 - Message queue for notifications
 - OpenClaw 3.22 compatibility
 
 **Breaking Changes**:
 - `openclaw` is now a peerDependency (must be installed in OpenClaw environment)
-
-**Installation**:
-```bash
-# Pre-compiled (recommended)
-wget https://github.com/bjyounger/openclaw-task-monitor/releases/download/v12.0.0/task-monitor-12.0.0.tgz
-tar -xzf task-monitor-12.0.0.tgz
-mv task-monitor-12.0.0 ~/.openclaw/extensions/task-monitor
-```
