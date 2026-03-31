@@ -1,6 +1,6 @@
 {
   "name": "task-monitor",
-  "version": "12.0.0",
+  "version": "12.0.1",
   "description": "监控子任务生命周期并自动重试（v12）",
   "main": "index.ts",
   "scripts": {
