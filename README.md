@@ -436,7 +436,8 @@ tar -xzf task-monitor.tgz
 
 | Version | Date | Changes |
 |---------|------|---------|
-| **v12.0.0** | 2026-03-26 | Config injection, pre-compiled packaging, OpenClaw 3.22 compat |
+| **v12.0.1** | 2026-03-31 | Bug fixes (P0/P1/P2), main task completion detection |
+| v12.0.0 | 2026-03-26 | Config injection, pre-compiled packaging, OpenClaw 3.22 compat |
 | v11.0.0 | 2026-03-24 | Auto task record, main task monitoring |
 | v10.0.0 | 2026-03-23 | Task chain tracking, timeout detection |
 | v9.0.0 | 2026-03-22 | Message queue for notifications |
@@ -445,6 +446,30 @@ tar -xzf task-monitor.tgz
 ---
 
 ## Changelog
+
+### v12.0.1 (2026-03-31)
+
+**Bug Fixes**:
+- P0: Memory leak in `activityTimeoutAlerted` Set
+- P0: AlertManager cooldown config was ignored (hardcoded value)
+- P1: Tool timeout default value handling (`||` → `??`)
+- P2: Scheduled task status was not checked for timeout
+- P2: Task chain timeout used `createdAt` instead of `lastActivityAt`
+- P2: Task chain status logic error (now distinguishes allSuccess vs hasFailure)
+- P2: Message queue could wait infinitely (added 30s periodic check)
+- P2: Timer cleanup depended only on process signals (added exception handlers)
+
+**New Features**:
+- Main task completion detection via transcript
+  - OpenClaw Gateway does not send lifecycle events (`turn_started`/`turn_ended`)
+  - Plugin now detects main task completion from assistant message content
+
+**Installation**:
+```bash
+wget https://github.com/bjyounger/openclaw-task-monitor/releases/download/v12.0.1/task-monitor-12.0.1.tgz
+tar -xzf task-monitor-12.0.1.tgz
+mv task-monitor-12.0.1 ~/.openclaw/extensions/task-monitor
+```
 
 ### v12.0.0 (2026-03-26)
 
