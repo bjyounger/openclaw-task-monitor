@@ -124,6 +124,31 @@ mkdir -p "$WORKSPACE_DIR/memory/tasks/running"
 mkdir -p "$WORKSPACE_DIR/memory/tasks/completed"
 log "   ✓ 目录已创建"
 
+# ==================== 7. 集成 bootstrap 维护脚本 ====================
+log ""
+log "7. 集成启动维护脚本..."
+
+BOOTSTRAP_SCRIPT="$SCRIPT_DIR/bootstrap.sh"
+if [ -x "$BOOTSTRAP_SCRIPT" ]; then
+    log "   bootstrap.sh 可用，提供以下集成选项："
+    log ""
+    log "   方式 1: Gateway 启动时执行"
+    log "      在 Gateway 启动脚本中添加："
+    log "      $BOOTSTRAP_SCRIPT"
+    log ""
+    log "   方式 2: 定时执行（推荐）"
+    log "      $BOOTSTRAP_SCRIPT --install-cron"
+    log "      将在每天 6:00 自动执行维护"
+    log ""
+    log "   维护内容："
+    log "     - 检查并修复插件权限"
+    log "     - 备份 openclaw.json"
+    log "     - 清理过期会话（>30天）"
+    log "     - 验证插件加载状态"
+else
+    log "   ⚠️ bootstrap.sh 不存在或不可执行"
+fi
+
 # ==================== 7. 下一步提示 ====================
 log ""
 log "=========================================="
