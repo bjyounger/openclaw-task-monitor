@@ -4,6 +4,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { spawn, exec as execCallback, execSync } from "child_process";
 import * as readline from "readline";
+import AsyncLock from "async-lock";
 import { 
   StateManager, 
   AlertManager, 
@@ -24,6 +25,12 @@ import {
   type SessionType,
   type MemoryConfig,
 } from "./lib";
+
+// 全局 logger，在 register 时初始化
+let logger: any;
+
+// Map 并发安全锁
+const mapLock = new AsyncLock();
 
 // ==================== Session Key 辅助函数 ====================
 
@@ -140,14 +147,14 @@ async function readLastMessages(
           if (obj.type === "message" && obj.message) {
             messages.unshift(obj);
           }
-        } catch {
-          // 忽略解析错误
+        } catch (parseError) {
+          // JSON 解析错误，跳过该行（可能是非消息行）
         }
       }
       
       resolve(messages);
     } catch (e) {
-      console.error("[task-monitor] Error reading session file:", e);
+      logger?.error?.(`[task-monitor] Error reading session file: ${e}`);
       resolve([]);
     }
   });
@@ -252,7 +259,7 @@ async function findSessionKeyByFile(sessionFile: string): Promise<string | null>
     
     return null;
   } catch (e) {
-    console.error("[task-monitor] Error in findSessionKeyByFile:", e);
+    logger?.error?.(`[task-monitor] Error in findSessionKeyByFile: ${e}`);
     return null;
   }
 }
@@ -308,7 +315,7 @@ function getSessionChannelInfo(sessionKey: string): { channel: string; target: s
     
     return null;
   } catch (e) {
-    console.error("[task-monitor] Error in getSessionChannelInfo:", e);
+    logger?.error?.(`[task-monitor] Error in getSessionChannelInfo: ${e}`);
     return null;
   }
 }
@@ -451,7 +458,7 @@ async function executeRetrySafely(
  */
 async function sendNotification(alertType: string, message: string, channel?: string, target?: string): Promise<void> {
   if (!alertManager) {
-    console.error("[task-monitor] AlertManager not initialized");
+    logger?.error?.("[task-monitor] AlertManager not initialized");
     return;
   }
   
@@ -474,11 +481,11 @@ async function sendNotification(alertType: string, message: string, channel?: st
     const sent = await alertManager.sendAlertToTarget(alertType, message, alertType, channel, target);
     if (!sent) {
       // 发送失败，加入消息队列
-      console.warn("[task-monitor] Alert send returned false, queuing message");
+      logger?.warn?.("[task-monitor] Alert send returned false, queuing message");
       messageQueue.enqueue(alertType, message, alertType);
     }
   } catch (e) {
-    console.error("[task-monitor] Failed to send notification:", e);
+    logger?.error?.(`[task-monitor] Failed to send notification: ${e}`);
     // 异常时也加入队列
     messageQueue.enqueue(alertType, message, alertType);
   }
@@ -491,9 +498,11 @@ const plugin = {
   configSchema: emptyPluginConfigSchema(),
 
   register(api: OpenClawPluginApi) {
+    // 初始化全局 logger
+    logger = api.logger;
+    
     // ==================== 加载配置 ====================
     const config = loadConfig();
-    console.log(`[task-monitor] Plugin registering (v12, config version: ${config.version})...`);
     api.logger.info?.(`[task-monitor] Plugin registering (v12, config version: ${config.version})...`);
 
     // 从配置中提取常用路径
@@ -1208,8 +1217,10 @@ const plugin = {
                   
                   fs.writeFileSync(taskFilePath, taskContent, "utf-8");
                   
-                  // 更新任务频道映射
-                  taskChannelMap.set(evt.sessionKey, { channel, target: notifyTarget });
+                  // 更新任务频道映射（加锁保护）
+                  mapLock.acquire('taskChannelMap', () => {
+                    taskChannelMap.set(evt.sessionKey, { channel, target: notifyTarget });
+                  });
                   
                   api.logger.info?.(`[task-monitor] Auto-created task record: ${taskFileName} (channel: ${channel}, notifyTarget: ${notifyTarget})`);
                 }
@@ -1346,8 +1357,10 @@ const plugin = {
         const message = formatAgentEvent(evt, streamConfig);
         if (!message) return; // 被过滤的事件
 
-        // 更新节流时间戳
-        lastSentMap.set(evt.sessionKey, now);
+        // 更新节流时间戳（加锁保护）
+        mapLock.acquire('lastSentMap', () => {
+          lastSentMap.set(evt.sessionKey, now);
+        });
 
         // 发送到父会话
         const parentSessionKey = chain?.mainSessionKey;
@@ -1396,10 +1409,12 @@ const plugin = {
           // 更新 StateManager heartbeat（防止误判超时）
           await stateManager?.heartbeat(sessionKey);
           
-          // 更新任务频道映射
+          // 更新任务频道映射（加锁保护）
           const channelInfo = getSessionChannelInfo(sessionKey);
           if (channelInfo) {
-            taskChannelMap.set(sessionKey, channelInfo);
+            mapLock.acquire('taskChannelMap', () => {
+              taskChannelMap.set(sessionKey, channelInfo);
+            });
             api.logger.info?.(`[task-monitor] Task channel updated: ${sessionKey} -> ${channelInfo.channel}:${channelInfo.target}`);
           }
           
@@ -1423,7 +1438,9 @@ const plugin = {
             let tracking = mainTaskTracking.get(sessionKey);
             if (!tracking) {
               tracking = { startTime: Date.now(), lastCheck: Date.now() };
-              mainTaskTracking.set(sessionKey, tracking);
+              mapLock.acquire('mainTaskTracking', () => {
+                mainTaskTracking.set(sessionKey, tracking);
+              });
               
               // 创建任务文件
               const taskName = `main-${sessionKey.split(':').pop()}-${new Date().toISOString().slice(0,16).replace(/[:.]/g, '-')}`;
@@ -1477,8 +1494,10 @@ const plugin = {
                   }
                 }
                 
-                // 清理追踪
-                mainTaskTracking.delete(sessionKey);
+                // 清理追踪（加锁保护）
+                mapLock.acquire('mainTaskTracking', () => {
+                  mainTaskTracking.delete(sessionKey);
+                });
               }
             }
             
@@ -1526,8 +1545,10 @@ const plugin = {
           return;
         }
         
-        // 7. 更新节流时间戳
-        transcriptLastSentMap.set(sessionKey, now);
+        // 7. 更新节流时间戳（加锁保护）
+        mapLock.acquire('transcriptLastSentMap', () => {
+          transcriptLastSentMap.set(sessionKey, now);
+        });
         
         // 8. 发送到父会话
         const depth = getSubagentDepth(sessionKey);
@@ -1797,12 +1818,14 @@ const plugin = {
 
         api.logger.info?.(`[task-monitor] Exec started: ${execId}, command: ${command.slice(0, 100)}`);
 
-        // 记录到追踪 map
-        execTasks.set(execId, {
-          startTime: Date.now(),
-          command,
-          runId: event.runId,
-          sessionKey: (event as any).sessionKey,
+        // 记录到追踪 map（加锁保护）
+        mapLock.acquire('execTasks', () => {
+          execTasks.set(execId, {
+            startTime: Date.now(),
+            command,
+            runId: event.runId,
+            sessionKey: (event as any).sessionKey,
+          });
         });
 
         // 注册到状态管理器（设置最小 timeout 为 30 秒，避免立即超时）
@@ -1859,8 +1882,10 @@ const plugin = {
 
         api.logger.info?.(`[task-monitor] Exec ended: ${execId}, duration: ${duration}ms, error: ${isError}`);
 
-        // 从追踪 map 移除
-        execTasks.delete(execId);
+        // 从追踪 map 移除（加锁保护）
+        mapLock.acquire('execTasks', () => {
+          execTasks.delete(execId);
+        });
 
         // 更新状态管理器
         if (stateManager) {
