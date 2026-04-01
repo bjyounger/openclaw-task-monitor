@@ -465,9 +465,10 @@ async function sendNotification(alertType: string, message: string, channel?: st
     }
   }
   
-  // 最终 fallback 到配置默认值
-  channel = channel || config.notification.channel;
-  target = target || config.notification.target;
+  // 配置文件优先级最高（用户明确设置的通知目标）
+  // 只有配置文件没有设置时，才使用会话频道作为 fallback
+  channel = config.notification.channel || channel;
+  target = config.notification.target || target;
   
   try {
     const sent = await alertManager.sendAlertToTarget(alertType, message, alertType, channel, target);
@@ -664,6 +665,41 @@ const plugin = {
           if (sessionKey) {
             activityTracker.trackSessionEnd(runId, sessionKey);
             api.logger.debug?.(`[task-monitor] Session ended: ${sessionKey}`);
+            
+            // 主任务完成即时通知（session_end 触发）
+            if (!sessionKey.includes(":subagent:") && !sessionKey.includes(":acp:")) {
+              const alertId = `main_completed_${sessionKey}`;
+              
+              // 原子操作：先记录再发送，避免并发重复
+              if (alertManager?.shouldAlert(alertId, "main_completed")) {
+                alertManager.recordAlert(alertId, "main_completed");
+                
+                // 获取通知目标：taskChannelMap → config
+                const channelInfo = taskChannelMap.get(sessionKey) || {
+                  channel: config.notification.channel,
+                  target: config.notification.target
+                };
+                
+                const notifyMessage = `✅ 主任务完成\n\n会话: ${sessionKey}\n时间: ${new Date().toLocaleString("zh-CN")}`;
+                
+                try {
+                  execSync(
+                    `openclaw message send --channel "${channelInfo.channel}" --target "${channelInfo.target}" --message "${notifyMessage.replace(/\n/g, '\\n')}"`,
+                    { timeout: 15000, stdio: 'pipe' }
+                  );
+                  api.logger.info?.(`[task-monitor] ✅ Main task completion notification sent via session_end: ${sessionKey}`);
+                } catch (e) {
+                  // 发送失败，移除记录允许重试
+                  alertManager.alertRecords?.delete(alertId);
+                  api.logger.error?.(`[task-monitor] Failed to send completion notification: ${e}`);
+                  
+                  // 加入消息队列重试
+                  messageQueue.enqueue(sessionKey, notifyMessage, "main_completed");
+                }
+              } else {
+                api.logger.debug?.(`[task-monitor] Alert already sent for ${alertId}, skipping`);
+              }
+            }
           }
         } catch (e) {
           api.logger.error?.(`[task-monitor] Error in session_end hook: ${e}`);
