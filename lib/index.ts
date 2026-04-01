@@ -88,3 +88,18 @@ export type {
   TaskSummary,
   TranscriptExtractor,
 } from './memory';
+
+// 新增：统一定时器管理模块
+export {
+  TimerManager,
+  getTimerManager,
+  resetTimerManager,
+  DEFAULT_TICK_STRATEGY,
+  DEFAULT_TIMER_MANAGER_CONFIG,
+} from './TimerManager';
+export type {
+  TickStrategy,
+  TimerCallback,
+  TimerConfig,
+  TimerManagerConfig,
+} from './TimerManager';

@@ -152,6 +152,14 @@ export interface TaskMonitorConfig {
   alertDeduplication?: AlertDeduplicationConfig;
   degradation?: DegradationConfig;
   memory?: MemoryModuleConfig;
+  timers?: {
+    /** 是否使用旧版定时器（回滚开关） */
+    useLegacy?: boolean;
+    /** 基础间隔（毫秒） */
+    baseInterval?: number;
+    /** 执行超时（毫秒） */
+    executionTimeout?: number;
+  };
 }
 
 // ==================== 默认配置 ====================
