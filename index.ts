@@ -634,10 +634,14 @@ const plugin = {
             const errorMsg = typeof result === 'string' ? result : JSON.stringify(result);
             api.logger.error?.(`[task-monitor] sessions_spawn failed: ${errorMsg}`);
             
+            // 获取当前会话的频道信息
+            const sessionKey = (event as any).sessionKey;
+            const channelInfo = sessionKey ? getSessionChannelInfo(sessionKey) : null;
+            
             // 发送告警
             if (alertManager?.shouldAlert(`spawn_failed_${Date.now()}`, "spawn_failed")) {
               const message = `❌ 子任务创建失败\n\n错误: ${errorMsg.slice(0, 500)}`;
-              await sendNotification("spawn_failed", message, config);
+              await sendNotification("spawn_failed", message, config, channelInfo?.channel, channelInfo?.target);
               alertManager.recordAlert(`spawn_failed_${Date.now()}`, "spawn_failed");
             }
           }
@@ -764,12 +768,13 @@ const plugin = {
       await interruptHandler.handleInterrupt(runId, reason as any, context);
     });
     
-    activityTracker.setToolTimeoutHandler(async (toolCall) => {
-      await interruptHandler.handleToolTimeout(toolCall);
-    });
+    // v13: 删除工具超时检测，移至观察者模式
+    // activityTracker.setToolTimeoutHandler(async (toolCall) => {
+    //   await interruptHandler.handleToolTimeout(toolCall);
+    // });
     
     activityTracker.startActivityDetection();
-    activityTracker.startToolTimeoutDetection();
+    // activityTracker.startToolTimeoutDetection(); // v13: 删除
     activityTracker.startCleanup();
     
     // 启动健康检查
@@ -897,7 +902,11 @@ const plugin = {
         await stateManager.markRetryExecuted(retry.runId);
 
         const label = task.metadata?.label || retry.runId;
-        await sendNotification("retry_started", `🔄 开始重试子任务\n\n任务: ${label}\n重试次数: ${retry.retryCount}/${task.maxRetries}`, config);
+        // v4: 从任务对象获取频道信息
+        const taskChannel = task.channel;
+        const taskTarget = task.target;
+        
+        await sendNotification("retry_started", `🔄 开始重试子任务\n\n任务: ${label}\n重试次数: ${retry.retryCount}/${task.maxRetries}`, config, taskChannel, taskTarget);
 
         try {
           const agentId = task.metadata?.agentId as string;
@@ -915,7 +924,7 @@ const plugin = {
             await stateManager.scheduleRetry(retry.runId);
           } else {
             await stateManager.abandonTask(retry.runId);
-            await sendNotification("retry_exhausted", `❌ 任务最终失败\n\n任务: ${label}\n重试耗尽，已放弃`, config);
+            await sendNotification("retry_exhausted", `❌ 任务最终失败\n\n任务: ${label}\n重试耗尽，已放弃`, config, taskChannel, taskTarget);
           }
         }
       }
@@ -1458,6 +1467,22 @@ const plugin = {
           return;
         }
 
+        // 获取频道信息：从 childSessionKey 提取父会话
+        // childSessionKey 格式: "agent:main:telegram:direct:8665573247" 或 "agent:main:subagent:xxx"
+        let channelInfo: { channel: string; target: string } | null = null;
+        
+        if (isMainTask) {
+          // 主任务派发，直接从 childSessionKey 获取
+          channelInfo = getSessionChannelInfo(data.childSessionKey);
+        } else {
+          // 子任务派发，从父会话获取
+          const parts = data.childSessionKey.split(":subagent:");
+          if (parts.length >= 2) {
+            const parentSessionKey = parts[0]; // 例如 "agent:main:telegram:direct:8665573247"
+            channelInfo = getSessionChannelInfo(parentSessionKey);
+          }
+        }
+
         // 注册新任务到状态管理器
         const task = await stateManager.registerTask({
           id: data.runId,
@@ -1465,6 +1490,9 @@ const plugin = {
           status: "running",
           timeoutMs: config.monitoring.subtaskTimeout,
           parentTaskId: null,
+          // v4: 保存频道信息到任务对象
+          channel: channelInfo?.channel,
+          target: channelInfo?.target,
           metadata: {
             label: data.label,
             agentId: data.agentId,
@@ -1514,12 +1542,16 @@ const plugin = {
 
         const label = task.metadata?.label || runId;
         const isKilled = data.outcome === "killed";
+        
+        // v4: 从任务对象获取频道信息
+        const taskChannel = task.channel;
+        const taskTarget = task.target;
 
         // === 情况 1: 成功完成 ===
         if (data.outcome === "ok") {
           await stateManager.updateTask(runId, { status: "completed" });
           await stateManager.recordRetryOutcome(runId, "ok");
-          await sendNotification("task_completed", `✅ 子任务完成\n\n任务: ${label}\n重试次数: ${task.retryCount}`, config);
+          await sendNotification("task_completed", `✅ 子任务完成\n\n任务: ${label}\n重试次数: ${task.retryCount}`, config, taskChannel, taskTarget);
 
           // 通知父会话
           try {
@@ -1538,7 +1570,7 @@ const plugin = {
         if (isKilled) {
           await stateManager.updateTask(runId, { status: "killed" });
           await stateManager.cancelScheduledRetry(runId);
-          await sendNotification("task_killed", `🛑 子任务已终止\n\n任务: ${label}`, config);
+          await sendNotification("task_killed", `🛑 子任务已终止\n\n任务: ${label}`, config, taskChannel, taskTarget);
           return;
         }
 
@@ -1555,7 +1587,9 @@ const plugin = {
           `🚨 子任务${outcome === "timeout" ? "超时" : "失败"} (实时告警)\n\n` +
           `任务: ${label}\n` +
           `原因: ${failureMessage.slice(0, 200)}`,
-          config
+          config,
+          taskChannel,
+          taskTarget
         );
         api.logger.warn?.(`[task-monitor] Subagent failed (real-time report): ${runId}, outcome: ${outcome}`);
 
@@ -1573,7 +1607,9 @@ const plugin = {
             `任务: ${label}\n` +
             `重试次数: ${task.retryCount + 1}/${task.maxRetries}\n` +
             `预计执行: ${new Date(schedule.scheduledTime).toLocaleString("zh-CN")}`,
-            config
+            config,
+            taskChannel,
+            taskTarget
           );
         } else {
           // 重试耗尽，放弃任务
@@ -1584,7 +1620,9 @@ const plugin = {
             `任务: ${label}\n` +
             `重试次数: ${task.retryCount}/${task.maxRetries}\n` +
             `原因: ${data.error || outcome}`,
-            config
+            config,
+            taskChannel,
+            taskTarget
           );
         }
 
@@ -1605,7 +1643,7 @@ const plugin = {
 
     // ==================== 监听 exec 进程 (v12: before_tool_call/after_tool_call hooks) ====================
     // 追踪正在执行的 exec 任务
-    const execTasks = new Map<string, { startTime: number; command: string; runId?: string; sessionKey?: string }>();
+    const execTasks = new Map<string, { startTime: number; command: string; runId?: string; sessionKey?: string; channel?: string; target?: string }>();
 
     api.on("before_tool_call", async (event) => {
       try {
@@ -1618,13 +1656,19 @@ const plugin = {
 
         api.logger.info?.(`[task-monitor] Exec started: ${execId}, command: ${command.slice(0, 100)}`);
 
+        // 获取当前任务的频道信息
+        const sessionKey = (event as any).sessionKey;
+        const channelInfo = sessionKey ? getSessionChannelInfo(sessionKey) : null;
+
         // 记录到追踪 map（加锁保护）
         mapLock.acquire('execTasks', () => {
           execTasks.set(execId, {
             startTime: Date.now(),
             command,
             runId: event.runId,
-            sessionKey: (event as any).sessionKey,
+            sessionKey: sessionKey,
+            channel: channelInfo?.channel,
+            target: channelInfo?.target,
           });
         });
 
@@ -1719,7 +1763,9 @@ const plugin = {
             `命令: ${commandPreview}\n` +
             `执行时长: ${Math.floor(duration / 1000)}秒\n` +
             `错误: ${errorMessage.slice(0, 200)}`,
-            config
+            config,
+            execTask.channel,
+            execTask.target
           );
 
           api.logger.warn?.(`[task-monitor] Exec failed (real-time report): ${execId}, error: ${errorMessage.slice(0, 100)}`);
