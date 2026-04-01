@@ -37,143 +37,6 @@ let logger: any;
 // Map 并发安全锁
 const mapLock = new AsyncLock();
 
-// ==================== Zombie Task Detector (Layer 2 兜底) ====================
-
-/**
- * Zombie 任务信息
- */
-interface ZombieTaskInfo {
-  taskName: string;
-  filePath: string;
-  sessionKey: string;
-  detectedAt: number;
-  lastActivity: number;
-  retryCount: number;
-}
-
-/**
- * Zombie 任务检测器
- * 用于检测和处理会话异常结束导致的孤儿任务
- */
-class ZombieTaskDetector {
-  private zombieTasks: Map<string, ZombieTaskInfo> = new Map();
-  private readonly ZOMBIE_THRESHOLD_MS = 5 * 60 * 1000; // 5 分钟
-  private readonly MAX_ZOMBIE_RETRIES = 3;
-
-  /**
-   * 标记任务为 zombie
-   */
-  markAsZombie(taskName: string, filePath: string, sessionKey: string): void {
-    const existing = this.zombieTasks.get(taskName);
-    
-    if (existing) {
-      existing.retryCount++;
-      existing.detectedAt = Date.now();
-    } else {
-      this.zombieTasks.set(taskName, {
-        taskName,
-        filePath,
-        sessionKey,
-        detectedAt: Date.now(),
-        lastActivity: Date.now(),
-        retryCount: 0,
-      });
-    }
-    
-    logger?.info?.(`[task-monitor] Task marked as zombie: ${taskName}, retry: ${existing ? existing.retryCount : 0}`);
-  }
-
-  /**
-   * 获取可清理的 zombie 任务列表
-   * 条件：超过阈值时间 且 重试次数超过限制
-   */
-  getCleanableZombies(): ZombieTaskInfo[] {
-    const now = Date.now();
-    const cleanable: ZombieTaskInfo[] = [];
-    
-    this.zombieTasks.forEach((task) => {
-      const age = now - task.detectedAt;
-      if (age >= this.ZOMBIE_THRESHOLD_MS && task.retryCount >= this.MAX_ZOMBIE_RETRIES) {
-        cleanable.push(task);
-      }
-    });
-    
-    return cleanable;
-  }
-
-  /**
-   * 移除 zombie 标记
-   */
-  removeZombie(taskName: string): void {
-    this.zombieTasks.delete(taskName);
-    logger?.debug?.(`[task-monitor] Zombie task removed: ${taskName}`);
-  }
-
-  /**
-   * 检查任务是否是 zombie
-   */
-  isZombie(taskName: string): boolean {
-    return this.zombieTasks.has(taskName);
-  }
-
-  /**
-   * 获取所有 zombie 任务
-   */
-  getAllZombies(): ZombieTaskInfo[] {
-    return Array.from(this.zombieTasks.values());
-  }
-}
-
-const zombieDetector = new ZombieTaskDetector();
-
-// ==================== Session 存活检测 (Layer 2 兜底) ====================
-
-/**
- * 检查会话是否存活
- * @param sessionKey 会话 key
- * @returns true 表示会话存活，false 表示会话已结束
- */
-async function checkSessionAlive(sessionKey: string): Promise<boolean> {
-  try {
-    // 解析 agentId
-    const parts = sessionKey.split(":");
-    const agentId = parts[1] || "main";
-    
-    // 读取 sessions.json
-    const sessionsJsonPath = path.join(
-      process.env.HOME || "/root",
-      `.openclaw/agents/${agentId}/sessions/sessions.json`
-    );
-    
-    if (!fs.existsSync(sessionsJsonPath)) {
-      logger?.debug?.(`[task-monitor] sessions.json not found: ${sessionsJsonPath}`);
-      return false;
-    }
-    
-    const content = fs.readFileSync(sessionsJsonPath, "utf-8");
-    const sessions = JSON.parse(content);
-    
-    // 检查 sessionKey 是否存在
-    if (sessions[sessionKey]) {
-      const sessionEntry = sessions[sessionKey];
-      const sessionFile = sessionEntry.sessionFile;
-      
-      if (sessionFile && fs.existsSync(sessionFile)) {
-        const stat = fs.statSync(sessionFile);
-        const ageMs = Date.now() - stat.mtimeMs;
-        // 5 分钟内更新过，认为会话存活
-        return ageMs < 300000;
-      }
-    }
-    
-    return false;
-  } catch (e) {
-    logger?.error?.(`[task-monitor] checkSessionAlive error: ${e}`);
-    // 保守处理：出错时假设会话存活，避免误清理
-    return true;
-  }
-}
-
 // ==================== Session Key 辅助函数 ====================
 
 /**
@@ -622,8 +485,8 @@ async function sendNotification(
   
   // 配置文件优先级最高（用户明确设置的通知目标）
   // 只有配置文件没有设置时，才使用会话频道作为 fallback
-  channel = config.notification.channel || channel;
-  target = config.notification.target || target;
+  channel = channel || config.notification.channel;
+  target = target || config.notification.target;
   
   try {
     const sent = await alertManager.sendAlertToTarget(alertType, message, alertType, channel, target);
@@ -642,7 +505,7 @@ async function sendNotification(
 const plugin = {
   id: "task-monitor",
   name: "Task Monitor",
-  description: "监控子任务生命周期、自动重试、任务链追踪、进度报告、主任务监控、停滞检测、超时检测、exec进程监控、失败实时上报（v12）",
+  description: "监控子任务生命周期、自动重试、任务链追踪、主任务监控、exec进程监控、失败实时上报（v13 - 事件驱动架构）",
   configSchema: emptyPluginConfigSchema(),
 
   register(api: OpenClawPluginApi) {
@@ -651,7 +514,7 @@ const plugin = {
     
     // ==================== 加载配置 ====================
     const config = loadConfig();
-    api.logger.info?.(`[task-monitor] Plugin registering (v12, config version: ${config.version})...`);
+    api.logger.info?.(`[task-monitor] Plugin registering (v13 - event-driven, config version: ${config.version})...`);
 
     // 从配置中提取常用路径
     const TASKS_DIR = config.storage.tasksDir;
@@ -990,81 +853,6 @@ const plugin = {
       api.logger.error?.(`[task-monitor] Recovery failed: ${e}`);
     });
 
-    // ==================== 启动时清理孤儿任务 (Layer 3 兜底) ====================
-    async function cleanupOrphanTasksOnStartup(): Promise<void> {
-      const runningDir = path.join(TASKS_DIR, "running");
-      if (!fs.existsSync(runningDir)) return;
-      
-      const taskFiles = fs.readdirSync(runningDir).filter(f => f.endsWith(".md"));
-      let cleaned = 0;
-      
-      api.logger.info?.(`[task-monitor] Startup cleanup: checking ${taskFiles.length} running tasks...`);
-      
-      for (const file of taskFiles) {
-        const taskName = file.replace(".md", "");
-        const filePath = path.join(runningDir, file);
-        
-        try {
-          const content = fs.readFileSync(filePath, "utf-8");
-          
-          // 提取 sessionKey
-          const sessionKeyMatch = content.match(/\*\*SessionKey\*\*:\s*(\S+)/);
-          const sessionKey = sessionKeyMatch ? sessionKeyMatch[1] : null;
-          
-          if (!sessionKey) {
-            api.logger.debug?.(`[task-monitor] Skipping task without sessionKey: ${file}`);
-            continue;
-          }
-          
-          // 检查任务文件创建时间，跳过 1 分钟内创建的任务
-          const taskStat = fs.statSync(filePath);
-          const taskAgeMs = Date.now() - taskStat.birthtimeMs;
-          
-          if (taskAgeMs < 60000) {
-            api.logger.debug?.(`[task-monitor] Skipping young task: ${file} (${Math.floor(taskAgeMs / 1000)}s old)`);
-            continue;
-          }
-          
-          // 检查 session 是否存活
-          const isAlive = await checkSessionAlive(sessionKey);
-          
-          if (!isAlive) {
-            // 移动到 completed 目录
-            const completedDir = path.join(TASKS_DIR, "completed");
-            if (!fs.existsSync(completedDir)) {
-              fs.mkdirSync(completedDir, { recursive: true });
-            }
-            
-            const newContent = content.replace(
-              /\*\*状态\*\*:\s*(running|pending)/,
-              "**状态**: completed (startup cleanup)"
-            ) + `\n\n---\n**清理时间**: ${new Date().toLocaleString("zh-CN")}\n**原因**: 启动时会话已不存在\n`;
-            
-            fs.writeFileSync(path.join(completedDir, file), newContent);
-            fs.unlinkSync(filePath);
-            cleaned++;
-            
-            api.logger.info?.(`[task-monitor] Cleaned orphan task on startup: ${file}`);
-          }
-        } catch (e) {
-          api.logger.error?.(`[task-monitor] Error checking task ${file}: ${e}`);
-        }
-      }
-      
-      if (cleaned > 0) {
-        api.logger.info?.(`[task-monitor] Startup cleanup complete: ${cleaned} orphan tasks removed`);
-      } else {
-        api.logger.info?.(`[task-monitor] Startup cleanup: no orphan tasks found`);
-      }
-    }
-    
-    // 执行启动时清理（延迟 10 秒，避免与恢复冲突）
-    setTimeout(() => {
-      cleanupOrphanTasksOnStartup().catch(e => {
-        api.logger.error?.(`[task-monitor] Startup cleanup failed: ${e}`);
-      });
-    }, 10000);
-
     // ==================== TimerManager 初始化 ====================
     // 读取定时器配置
     const timersConfig = config.timers || {};
@@ -1087,271 +875,6 @@ const plugin = {
     );
 
     // ==================== 定义定时器回调函数 ====================
-    
-    /**
-     * 超时检查回调
-     */
-    async function timeoutCheckerCallback(): Promise<void> {
-      if (!stateManager || !taskChainManager) return;
-      
-      // 任务超时检查
-      const timedOutTasks = await stateManager.checkTimeouts();
-      for (const task of timedOutTasks) {
-        api.logger.warn?.(`[task-monitor] Task timeout: ${task.id}`);
-        
-        let channelInfo = null;
-        
-        if (task.metadata?.channel && task.metadata?.target) {
-          channelInfo = {
-            channel: task.metadata.channel as string,
-            target: task.metadata.target as string
-          };
-        }
-        
-        if (!channelInfo) {
-          channelInfo = taskChannelMap.get(task.id);
-        }
-        
-        if (!channelInfo && task.type === 'exec' && task.metadata?.sessionKey) {
-          channelInfo = getSessionChannelInfo(task.metadata.sessionKey as string);
-        }
-        
-        if (!channelInfo && task.type === 'exec' && taskChannelMap.size > 0) {
-          const lastEntry = Array.from(taskChannelMap.entries()).pop();
-          if (lastEntry) {
-            channelInfo = lastEntry[1];
-            api.logger.info?.(`[task-monitor] Using latest channel for exec task: ${lastEntry[0]}`);
-          }
-        }
-        
-        const message = `任务超时！类型: ${task.type}, 运行时间: ${Math.floor((Date.now() - task.startTime) / 60000)} 分钟`;
-        
-        if (channelInfo) {
-          await alertManager?.sendAlertToTarget(
-            task.id,
-            message,
-            "timeout",
-            channelInfo.channel,
-            channelInfo.target
-          );
-        } else {
-          await alertManager?.sendAlert(task.id, message, "timeout");
-        }
-      }
-
-      // 任务链超时检查
-      const timedOutChains = await taskChainManager.checkTimeouts();
-      for (const chain of timedOutChains) {
-        api.logger.warn?.(`[task-monitor] Task chain timeout: ${chain.mainTaskId}`);
-        
-        const channelInfo = taskChannelMap.get(chain.mainTaskId);
-        const message = `任务链超时！\n\n主任务: ${chain.label || chain.mainTaskId}\n子任务数: ${chain.subtasks.length}\n运行时间: ${Math.floor((Date.now() - chain.createdAt) / 60000)} 分钟`;
-        
-        if (channelInfo) {
-          await alertManager?.sendAlertToTarget(
-            chain.mainTaskId,
-            message,
-            "chain_timeout",
-            channelInfo.channel,
-            channelInfo.target
-          );
-        } else {
-          await alertManager?.sendAlert(chain.mainTaskId, message, "chain_timeout");
-        }
-      }
-
-      // 主任务完成检测
-      const runningDir = path.join(TASKS_DIR, "running");
-      const completedDir = path.join(TASKS_DIR, "completed");
-      
-      if (fs.existsSync(runningDir)) {
-        const taskFiles = fs.readdirSync(runningDir).filter(f => f.endsWith(".md"));
-        
-        for (const file of taskFiles) {
-          const filePath = path.join(runningDir, file);
-          try {
-            const content = fs.readFileSync(filePath, "utf-8");
-            const stat = fs.statSync(filePath);
-            const elapsed = (Date.now() - stat.mtimeMs) / 1000;
-            
-            if (content.includes("**状态**: completed") || content.includes("状态: completed")) {
-              const taskName = file.replace(".md", "");
-              
-              if (!fs.existsSync(completedDir)) {
-                fs.mkdirSync(completedDir, { recursive: true });
-              }
-              const targetPath = path.join(completedDir, file);
-              
-              if (fs.existsSync(filePath) && !fs.existsSync(targetPath)) {
-                fs.renameSync(filePath, targetPath);
-                api.logger.info?.(`[task-monitor] Task file moved to completed: ${file}`);
-                
-                const channelMatch = content.match(/\*\*频道\*\*:\s*(\S+)/);
-                const notifyTargetMatch = content.match(/\*\*通知目标\*\*:\s*(\S+)/);
-                const taskChannel = channelMatch ? channelMatch[1] : config.notification.channel;
-                const notifyTarget = notifyTargetMatch ? notifyTargetMatch[1] : config.notification.target;
-                
-                api.logger.info?.(`[task-monitor] Sending completion notification to ${taskChannel}: ${notifyTarget}`);
-                
-                const alertId = `main_completed_${taskName}`;
-                
-                if (alertManager?.shouldAlert(alertId, "main_completed")) {
-                  const notifyMessage = `✅ 主任务完成\n\n任务: ${taskName}\n时间: ${new Date().toLocaleString("zh-CN")}`;
-                  try {
-                    execSync(
-                      `openclaw message send --channel "${taskChannel}" --target "${notifyTarget}" --message "${notifyMessage.replace(/\n/g, '\\n')}"`,
-                      { timeout: 15000, stdio: 'pipe' }
-                    );
-                    alertManager?.recordAlert(alertId, "main_completed");
-                    api.logger.info?.(`[task-monitor] ✅ Notification sent to ${taskChannel}: ${notifyTarget}`);
-                  } catch (e) {
-                    api.logger.error?.(`[task-monitor] Failed to send completion notification: ${e}`);
-                  }
-                } else {
-                  api.logger.debug?.(`[task-monitor] Alert already sent for ${alertId}, skipping`);
-                }
-              }
-              
-              const existingTask = await stateManager?.getTask(taskName);
-              if (existingTask) {
-                await stateManager?.updateTask(taskName, { 
-                  status: 'completed',
-                  notified: true,
-                  completedAt: Date.now()
-                });
-                api.logger.debug?.(`[task-monitor] Marked task as completed in StateManager: ${taskName}`);
-              }
-            }
-            // 停滞任务检测
-            else if ((content.includes("**状态**: pending") || content.includes("状态: pending")) && elapsed > config.monitoring.stalledPendingThreshold / 1000) {
-              const taskName = file.replace(".md", "");
-              await alertManager?.sendAlert(
-                `stalled_pending_${taskName}`,
-                `⚠️ 任务停滞\n\n任务: ${taskName}\n状态: pending\n停滞时间: ${Math.floor(elapsed / 60)} 分钟\n原因: 任务创建后未开始执行`,
-                "stalled_pending"
-              );
-              api.logger.warn?.(`[task-monitor] Stalled task detected (pending): ${file}`);
-            }
-            // 任务状态一致性检测 + Zombie 检测 (Layer 2)
-            else if ((content.includes("**状态**: running") || content.includes("状态: running")) && elapsed > config.monitoring.stalledRunningThreshold / 1000) {
-              const taskName = file.replace(".md", "");
-              
-              const allTasks = await stateManager?.getAllTasks() || [];
-              const hasActiveSubagent = allTasks.some(t => 
-                t.status === 'running' && 
-                (t.id === taskName || 
-                 t.metadata?.parentTaskId === taskName ||
-                 t.metadata?.mainTaskId === taskName)
-              );
-              
-              if (!hasActiveSubagent) {
-                // 提取 sessionKey
-                const sessionKeyMatch = content.match(/\*\*SessionKey\*\*:\s*(\S+)/);
-                const sessionKey = sessionKeyMatch ? sessionKeyMatch[1] : null;
-                
-                // 检查任务文件创建时间，跳过 1 分钟内创建的任务
-                const taskStat = fs.statSync(filePath);
-                const taskAgeMs = Date.now() - taskStat.birthtimeMs;
-                
-                if (taskAgeMs < 60000) {
-                  api.logger.debug?.(`[task-monitor] Skipping zombie check for young task: ${file} (${Math.floor(taskAgeMs / 1000)}s old)`);
-                  continue;
-                }
-                
-                // 标记为 zombie
-                if (sessionKey) {
-                  zombieDetector.markAsZombie(taskName, filePath, sessionKey);
-                  
-                  // 发送告警（降低频率）
-                  const alertId = `zombie_detected_${taskName}`;
-                  if (alertManager?.shouldAlert(alertId, "zombie_detected")) {
-                    await alertManager?.sendAlert(
-                      alertId,
-                      `⚠️ 检测到僵尸任务\n\n任务: ${taskName}\n状态: running\n停滞时间: ${Math.floor(elapsed / 60)} 分钟\n原因: 会话可能已异常结束，将在 5 分钟后清理`,
-                      "zombie_detected"
-                    );
-                    alertManager?.recordAlert(alertId, "zombie_detected");
-                  }
-                  
-                  // 检查是否可清理
-                  const cleanable = zombieDetector.getCleanableZombies();
-                  const thisTask = cleanable.find(z => z.taskName === taskName);
-                  
-                  if (thisTask) {
-                    // 检查 session 是否存活
-                    const isAlive = await checkSessionAlive(sessionKey);
-                    
-                    if (!isAlive) {
-                      api.logger.info?.(`[task-monitor] Cleaning up zombie task: ${taskName} (session not alive)`);
-                      
-                      // 移动到 completed 目录
-                      const completedDir = path.join(TASKS_DIR, "completed");
-                      if (!fs.existsSync(completedDir)) {
-                        fs.mkdirSync(completedDir, { recursive: true });
-                      }
-                      
-                      const newContent = content.replace(
-                        /\*\*状态\*\*:\s*(running|pending)/,
-                        "**状态**: completed (zombie cleanup)"
-                      ) + `\n\n---\n**清理时间**: ${new Date().toLocaleString("zh-CN")}\n**原因**: 会话已结束，zombie 清理\n`;
-                      
-                      try {
-                        fs.writeFileSync(path.join(completedDir, file), newContent);
-                        fs.unlinkSync(filePath);
-                        zombieDetector.removeZombie(taskName);
-                        
-                        api.logger.info?.(`[task-monitor] Zombie task cleaned: ${taskName}`);
-                        
-                        // 发送清理通知
-                        await alertManager?.sendAlert(
-                          `zombie_cleaned_${taskName}`,
-                          `🧹 已清理僵尸任务\n\n任务: ${taskName}\n原因: 会话已结束，自动清理`,
-                          "zombie_cleaned"
-                        );
-                      } catch (cleanupError) {
-                        api.logger.error?.(`[task-monitor] Failed to clean zombie task ${taskName}: ${cleanupError}`);
-                      }
-                    } else {
-                      api.logger.debug?.(`[task-monitor] Zombie task session still alive: ${taskName}`);
-                    }
-                  }
-                } else {
-                  // 无 sessionKey，直接告警
-                  await alertManager?.sendAlert(
-                    `stalled_running_${taskName}`,
-                    `⚠️ 任务状态不一致\n\n任务: ${taskName}\n状态: running\n停滞时间: ${Math.floor(elapsed / 60)} 分钟\n原因: 任务状态为 running 但无活跃子任务执行`,
-                    "stalled_running"
-                  );
-                }
-                
-                api.logger.warn?.(`[task-monitor] Stalled task detected (running, no subagent): ${file}`);
-              }
-            }
-            // 主任务超时检测
-            if ((content.includes("**状态**: pending") || content.includes("状态: pending")) && elapsed > config.monitoring.mainTaskTimeout / 1000) {
-              const taskName = file.replace(".md", "");
-              await alertManager?.sendAlert(
-                `main_task_timeout_${taskName}`,
-                `⏰ 主任务超时\n\n任务: ${taskName}\n状态: pending\n运行时间: ${Math.floor(elapsed / 60)} 分钟\n原因: 任务创建后长时间未开始`,
-                "main_task_timeout"
-              );
-              api.logger.warn?.(`[task-monitor] Main task timeout (pending): ${file}`);
-            }
-            if ((content.includes("**状态**: running") || content.includes("状态: running")) && elapsed > config.monitoring.mainTaskTimeout / 1000) {
-              const taskName = file.replace(".md", "");
-              await alertManager?.sendAlert(
-                `main_task_timeout_${taskName}`,
-                `⏰ 主任务超时\n\n任务: ${taskName}\n状态: running\n运行时间: ${Math.floor(elapsed / 60)} 分钟\n原因: 任务执行时间过长`,
-                "main_task_timeout"
-              );
-              api.logger.warn?.(`[task-monitor] Main task timeout (running): ${file}`);
-            }
-          } catch (e) {
-            // 忽略单个文件读取错误
-          }
-        }
-      }
-    }
     
     /**
      * 重试调度检查回调
@@ -1412,12 +935,6 @@ const plugin = {
 
     // ==================== 注册定时器到 TimerManager ====================
     timerManager.registerTimer({
-      name: 'timeoutChecker',
-      tickInterval: timerManagerConfig.tickStrategy.intervals.timeoutChecker,
-      callback: timeoutCheckerCallback,
-    });
-    
-    timerManager.registerTimer({
       name: 'retryChecker',
       tickInterval: timerManagerConfig.tickStrategy.intervals.retryChecker,
       callback: retryCheckerCallback,
@@ -1429,7 +946,7 @@ const plugin = {
       callback: cleanupCheckerCallback,
     });
     
-    api.logger.info?.('[task-monitor] Timers registered: timeoutChecker, retryChecker, cleanupChecker');
+    api.logger.info?.('[task-monitor] Timers registered: retryChecker, cleanupChecker');
 
     // ==================== 消息队列定时器：定期清空队列 ====================
     const queueFlushTimer = setInterval(async () => {
@@ -1438,9 +955,6 @@ const plugin = {
         await messageQueue.flushQueue();
       }
     }, 30000); // 每 30 秒尝试一次
-
-    // ==================== 进度报告定时器存储 ====================
-    const progressReporters = new Map<string, NodeJS.Timeout>();
 
     // ==================== 启动 TimerManager ====================
     timerManager.start();
@@ -1963,33 +1477,6 @@ const plugin = {
 
         api.logger.info?.(`[task-monitor] Task registered: ${task.id}`);
 
-        // ==================== 启动进度报告定时器 ====================
-        if (config.progress.enabled) {
-          const taskLabel = data.label || data.taskDescription || data.runId;
-          const progressTimer = setInterval(async () => {
-            try {
-              const currentTask = await stateManager?.getTask(data.runId);
-              if (!currentTask) {
-                // 任务不存在，停止定时器
-                clearInterval(progressTimer);
-                progressReporters.delete(data.runId);
-                return;
-              }
-
-              const runtime = Math.floor((Date.now() - currentTask.startTime) / 60000);
-              await alertManager?.sendAlert(
-                `progress_${data.runId}`,
-                `⏳ 子任务执行中\n\n任务: ${taskLabel}\n运行时间: ${runtime} 分钟\n状态: ${currentTask.status}`,
-                "progress"
-              );
-            } catch (e) {
-              api.logger.error?.(`[task-monitor] Progress report error: ${e}`);
-            }
-          }, config.progress.reportInterval);
-
-          progressReporters.set(data.runId, progressTimer);
-          api.logger.info?.(`[task-monitor] Progress reporter started for: ${data.runId}`);
-        }
       } catch (e) {
         api.logger.error?.(`[task-monitor] Error in subagent_spawned hook: ${e}`);
       }
@@ -2003,14 +1490,6 @@ const plugin = {
 
         const runId = data.runId;
         if (!runId || !stateManager) return;
-
-        // ==================== 停止进度报告定时器 ====================
-        const progressTimer = progressReporters.get(runId);
-        if (progressTimer) {
-          clearInterval(progressTimer);
-          progressReporters.delete(runId);
-          api.logger.info?.(`[task-monitor] Progress reporter stopped for: ${runId}`);
-        }
 
         // 更新任务链中的子任务状态
         if (taskChainManager) {
@@ -2258,11 +1737,6 @@ const plugin = {
       // 清理消息队列定时器
       clearInterval(queueFlushTimer);
       
-      // 清理所有进度报告定时器
-      for (const [runId, timer] of progressReporters) {
-        clearInterval(timer);
-        progressReporters.delete(runId);
-      }
       // 清理 InterruptHandler
       interruptHandler.shutdown();
       // 清理 MessageQueue 定时器
@@ -2286,7 +1760,7 @@ const plugin = {
       cleanup();
     });
 
-    api.logger.info?.("[task-monitor] Plugin registration complete (v12)");
+    api.logger.info?.("[task-monitor] Plugin registration complete (v13 - event-driven)");
   },
 };
 

@@ -103,3 +103,23 @@ export type {
   TimerConfig,
   TimerManagerConfig,
 } from './TimerManager';
+
+// 新增：Task 基类模块
+export {
+  BaseTask,
+  MainTask,
+  SubTask,
+  ExecTask,
+  EmbeddedTask,
+  TaskFactory,
+  DEFAULT_RETRY_CONFIG,
+  DEFAULT_NOTIFICATION_CONFIG,
+} from './base-task';
+export type {
+  TaskConfig,
+  RetryConfig,
+  NotificationConfig,
+  NotificationEvent,
+  TaskResult,
+  TaskSnapshot,
+} from './base-task';
