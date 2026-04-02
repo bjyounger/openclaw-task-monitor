@@ -16,6 +16,8 @@
   "include": [
     "*.ts",
     "lib/**/*.ts",
+    "handlers/**/*.ts",
+    "tests/**/*.ts",
     "scripts/**/*.ts"
   ],
   "exclude": [

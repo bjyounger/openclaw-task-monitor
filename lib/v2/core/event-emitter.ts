@@ -2,9 +2,9 @@ import { Mutex } from 'async-mutex';
 import type {
   ITaskEventEmitter,
   ITaskObserver,
-  ITaskEvent,
   ILogger,
 } from './interfaces';
+import type { ITaskEvent } from './types';
 
 /**
  * 任务事件发射器（优化版）

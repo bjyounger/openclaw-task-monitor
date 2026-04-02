@@ -37,7 +37,7 @@ export interface RetryRecord {
 }
 
 /**
- * 任务状态接口 (v3 扩展版)
+ * 任务状态接口 (v4 扩展版 - 添加通知路由)
  */
 export interface TaskState {
   /** 任务唯一标识 (runId，整个生命周期不变) */
@@ -54,6 +54,16 @@ export interface TaskState {
   timeoutMs: number;
   /** 父任务ID (子任务时有效) */
   parentTaskId: string | null;
+
+  // === 会话标识 (v4 新增) ===
+  /** 会话 key (如 agent:main:subagent:xxx) */
+  sessionKey?: string;
+
+  // === 通知路由字段 (v4 新增) ===
+  /** 通知渠道 (wecom, telegram 等) */
+  channel?: string;
+  /** 通知目标 (用户/群组标识) */
+  target?: string;
 
   // === 重试相关字段 (v3 新增) ===
   /** 当前重试次数 (0, 1, 2) */

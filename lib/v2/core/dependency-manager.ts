@@ -1,4 +1,5 @@
-import type { ITaskDependencyManager, ITaskDependency } from './interfaces';
+import type { ITaskDependencyManager } from './interfaces';
+import type { ITaskDependency } from './types';
 
 /**
  * 任务依赖管理器
