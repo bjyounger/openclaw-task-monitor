@@ -24,7 +24,6 @@ import {
   AlertManager,
   TaskChainManager,
   loadConfig,
-  messageQueue,
   ActivityTracker,
   getActivityTracker,
   InterruptHandler,
@@ -128,7 +127,6 @@ async function sendNotification(
   try {
     await alertManager.sendAlertToTarget(alertType, message, alertType, finalChannel, finalTarget);
   } catch (e) {
-    messageQueue.enqueue(alertType, message, alertType);
   }
 }
 
@@ -160,7 +158,6 @@ const plugin = {
     const taskChainManager = new TaskChainManager(STATE_DIR);
 
     // 初始化消息队列
-    messageQueue.setAlertManager(alertManager);
 
     // 初始化活跃追踪器
     const activityConfig = config.activityDetection || {};
@@ -413,7 +410,6 @@ const plugin = {
     const cleanup = async () => {
       timerManager.stop();
       interruptHandler.shutdown();
-      messageQueue.stopPeriodicCheck();
       await memoryManager.destroy();
       logger.info?.('[task-monitor] Cleanup complete');
     };

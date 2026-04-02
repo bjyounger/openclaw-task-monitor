@@ -25,8 +25,6 @@ export type {
 export { loadConfig, getDefaultConfig } from './config-loader';
 export type { TaskMonitorConfig } from './config-loader';
 
-export { MessageQueue, messageQueue } from './message-queue';
-export type { QueuedMessage, MessageQueueConfig } from './message-queue';
 
 export { ConfigInjector } from './config-injector';
 export type { InjectableConfig, InjectConfig } from './config-injector';
