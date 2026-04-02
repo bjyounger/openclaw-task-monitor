@@ -75,6 +75,48 @@ export interface TaskState {
   /** 重试历史记录 */
   retryHistory: RetryRecord[];
 
+  // ============ exec 任务专用字段 (v5 新增) ============
+  
+  /**
+   * 执行命令
+   * - 适用: exec 类型任务
+   * - 频率: 97% 任务使用
+   * - 来源: 从 exec 事件提取
+   */
+  command?: string | null;
+  
+  /**
+   * 执行时长（毫秒）
+   * - 适用: exec 类型任务
+   * - 频率: 82% 任务使用
+   * - 来源: 执行结束时计算
+   */
+  duration?: number | null;
+  
+  // ============ sub 任务专用字段 (v5 新增) ============
+  
+  /**
+   * 任务标签/名称
+   * - 适用: sub 类型任务
+   * - 频率: 2.6% 任务使用
+   * - 用途: 任务显示名称、通知内容
+   */
+  label?: string | null;
+  
+  /**
+   * 代理标识
+   * - 适用: sub 类型任务
+   * - 用途: 标识任务所属代理
+   */
+  agentId?: string | null;
+  
+  /**
+   * 运行模式
+   * - 适用: sub 类型任务
+   * - 可选值: run（一次性）, session（会话式）
+   */
+  mode?: 'run' | 'session' | null;
+
   /** 任务元数据 */
   metadata: Record<string, unknown>;
 }
@@ -281,6 +323,20 @@ export class StateManager {
         console.warn(`状态文件版本不匹配: ${state.version} !== ${StateManager.VERSION}`);
       }
       
+      // 迁移 v4 → v5
+      state.tasks = state.tasks.map(task => ({
+        ...task,
+        // 从 metadata 提取到顶级字段（兼容旧数据）
+        sessionKey: task.sessionKey ?? (task.metadata?.sessionKey as string | undefined) ?? undefined,
+        channel: task.channel ?? (task.metadata?.channel as string | undefined) ?? undefined,
+        target: task.target ?? (task.metadata?.target as string | undefined) ?? undefined,
+        command: task.command ?? (task.metadata?.command as string | undefined) ?? undefined,
+        duration: task.duration ?? (task.metadata?.duration as number | undefined) ?? undefined,
+        label: task.label ?? (task.metadata?.label as string | undefined) ?? undefined,
+        agentId: task.agentId ?? (task.metadata?.agentId as string | undefined) ?? undefined,
+        mode: task.mode ?? (task.metadata?.mode as 'run' | 'session' | undefined) ?? undefined,
+      }));
+      
       return state;
     } catch (error: any) {
       if (error.code === 'ENOENT') {
@@ -343,9 +399,9 @@ export class StateManager {
         ...task,
         startTime: now,
         lastHeartbeat: now,
-        retryCount: task.retryCount ?? 0,
+        retryCount: 0,
         maxRetries: task.maxRetries ?? StateManager.DEFAULT_MAX_RETRIES,
-        retryHistory: task.retryHistory ?? [],
+        retryHistory: [],
       };
       
       state.tasks.push(newTask);
@@ -729,6 +785,63 @@ export class StateManager {
       }
 
       return removed;
+    });
+  }
+
+  /**
+   * 根据 sessionKey 获取任务
+   * @param sessionKey 会话 key
+   * @returns 任务状态，如果不存在则返回 null
+   */
+  public async getTaskBySessionKey(sessionKey: string): Promise<TaskState | null> {
+    return this.withLock(async () => {
+      const state = this.readState();
+      return state.tasks.find(t => t.sessionKey === sessionKey) || null;
+    });
+  }
+
+  /**
+   * 获取任务的频道信息
+   * @param runId 任务 ID
+   * @returns 频道信息，如果不存在则返回 null
+   */
+  public async getTaskChannel(runId: string): Promise<{ channel: string; target: string } | null> {
+    const task = await this.getTask(runId);
+    if (!task?.channel || !task?.target) return null;
+    return { channel: task.channel, target: task.target };
+  }
+
+  /**
+   * 根据 sessionKey 获取频道信息
+   * @param sessionKey 会话 key
+   * @returns 频道信息，如果不存在则返回 null
+   */
+  public async getChannelBySessionKey(sessionKey: string): Promise<{ channel: string; target: string } | null> {
+    const task = await this.getTaskBySessionKey(sessionKey);
+    if (!task?.channel || !task?.target) return null;
+    return { channel: task.channel, target: task.target };
+  }
+
+  /**
+   * 根据频道查询任务列表
+   * @param channel 频道标识 (wecom, telegram 等)
+   * @returns 该频道的任务列表
+   */
+  public async getTasksByChannel(channel: string): Promise<TaskState[]> {
+    return this.withLock(async () => {
+      const state = this.readState();
+      return state.tasks.filter(t => t.channel === channel);
+    });
+  }
+
+  /**
+   * 获取所有活跃任务
+   * @returns 活跃任务列表 (running 和 pending 状态)
+   */
+  public async getActiveTasks(): Promise<TaskState[]> {
+    return this.withLock(async () => {
+      const state = this.readState();
+      return state.tasks.filter(t => t.status === 'running' || t.status === 'pending');
     });
   }
 }

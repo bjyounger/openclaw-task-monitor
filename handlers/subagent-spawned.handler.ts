@@ -112,10 +112,11 @@ export class SubagentSpawnedHandler implements IHandler {
           sessionKey: data.childSessionKey,
           channel: channelInfo?.channel,
           target: channelInfo?.target,
+          // v5: 提升到顶级字段
+          label: data.label,
+          agentId: data.agentId,
+          mode: data.mode as 'run' | 'session' | undefined,
           metadata: {
-            label: data.label,
-            agentId: data.agentId,
-            mode: data.mode,
             taskDescription: data.taskDescription || data.label,
             isMainTask,
           },

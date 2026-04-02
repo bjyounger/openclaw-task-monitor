@@ -117,16 +117,16 @@ async function sendNotification(
   alertType: string,
   message: string,
   config: TaskMonitorConfig,
-  channel?: string,
-  target?: string
+  channel?: string | null,
+  target?: string | null
 ): Promise<void> {
   if (!alertManager) return;
   
-  channel = channel || config.notification.channel;
-  target = target || config.notification.target;
+  const finalChannel = channel || config.notification.channel;
+  const finalTarget = target || config.notification.target;
   
   try {
-    await alertManager.sendAlertToTarget(alertType, message, alertType, channel, target);
+    await alertManager.sendAlertToTarget(alertType, message, alertType, finalChannel, finalTarget);
   } catch (e) {
     messageQueue.enqueue(alertType, message, alertType);
   }
@@ -310,12 +310,13 @@ const plugin = {
             timeoutMs: execTimeout,
             parentTaskId: event.runId || null,
             maxRetries: 0,
+            // v5: 提升到顶级字段
+            sessionKey,
+            channel: channelInfo?.channel,
+            target: channelInfo?.target,
+            command: command.slice(0, 500),
             metadata: {
-              command: command.slice(0, 500),
               toolName: event.toolName,
-              sessionKey,
-              channel: channelInfo?.channel,
-              target: channelInfo?.target,
             },
           });
         } catch (e: any) {
@@ -348,7 +349,8 @@ const plugin = {
         const status = isError ? (isTimeout ? 'timeout' : 'failed') : 'completed';
         await stateManager.updateTask(execId, {
           status,
-          metadata: { command: execTask.command, duration, error: event.error },
+          duration,
+          metadata: { error: event.error },
         });
 
         await stateManager.recordRetryOutcome(
