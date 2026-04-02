@@ -112,6 +112,8 @@ export interface IHandlerContext {
   mapLock: any;
   /** 任务频道映射 */
   taskChannelMap: Map<string, { channel: string; target: string }>;
+  /** 日志器 */
+  logger?: any;
 }
 
 /**

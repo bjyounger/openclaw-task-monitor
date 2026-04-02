@@ -29,6 +29,7 @@ import { DefaultNotificationStrategy } from './strategies/notification-strategie
 // 适配器：将 V1 StateManager 适配为 V2 接口
 import type { StateManager as V1StateManager } from '../state-manager';
 import type { AlertManager as V1AlertManager } from '../alert-manager';
+import { StateManagerAdapter } from '../adapters/state-manager-adapter';
 
 /**
  * V2 任务系统配置
@@ -61,44 +62,6 @@ export interface ITaskSystem {
   };
   retryStrategy: IRetryStrategy;
   notificationStrategy: INotificationStrategy;
-}
-
-/**
- * V1 StateManager 适配器
- * 将 V1 StateManager 适配为 V2 IStateManager 接口
- */
-class StateManagerAdapter implements IStateManager {
-  constructor(private v1StateManager: V1StateManager) {}
-  
-  registerTask(task: Partial<ITaskState> & { id: string; type: TaskType }): Promise<ITaskState> {
-    return this.v1StateManager.registerTask(task as any) as Promise<ITaskState>;
-  }
-  
-  getTask(taskId: string): Promise<ITaskState | null> {
-    return this.v1StateManager.getTask(taskId) as Promise<ITaskState | null>;
-  }
-  
-  updateTask(taskId: string, updates: Partial<ITaskState>): Promise<void> {
-    return this.v1StateManager.updateTask(taskId, updates as any).then(() => {});
-  }
-  
-  deleteTask(taskId: string): Promise<void> {
-    return this.v1StateManager.removeTask(taskId).then(() => {});
-  }
-  
-  heartbeat(taskId: string): Promise<boolean> {
-    return this.v1StateManager.heartbeat(taskId);
-  }
-  
-  getTimedOutTasks(): Promise<ITaskState[]> {
-    return this.v1StateManager.checkTimeouts() as Promise<ITaskState[]>;
-  }
-  
-  getActiveTasks(): Promise<ITaskState[]> {
-    return this.v1StateManager.getAllTasks().then(tasks => 
-      tasks.filter(t => t.status === 'running' || t.status === 'pending') as ITaskState[]
-    );
-  }
 }
 
 /**

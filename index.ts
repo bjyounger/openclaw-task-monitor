@@ -47,6 +47,10 @@ import { initializeTaskSystem, type ITaskSystem } from './lib/v2/plugin-integrat
 // Handlers
 import { SubagentSpawnedHandler } from './handlers/subagent-spawned.handler';
 import { SubagentEndedHandler } from './handlers/subagent-ended.handler';
+import { ExecHandler } from './handlers/exec.handler';
+import { TranscriptHandler } from './handlers/transcript.handler';
+import { AgentEventHandler } from './handlers/agent-event.handler';
+import type { IHandlerContext } from './handlers/interfaces';
 
 // ==================== 类型定义 ====================
 
@@ -66,15 +70,6 @@ interface SubagentEndedPayload {
   runId?: string;
   endedAt?: number;
   error?: string;
-}
-
-interface ExecTask {
-  startTime: number;
-  command: string;
-  runId?: string;
-  sessionKey?: string;
-  channel?: string;
-  target?: string;
 }
 
 // ==================== 辅助函数 ====================
@@ -268,108 +263,32 @@ const plugin = {
     );
     subagentEndedHandler.register(api);
 
-    // ==================== Exec 监控 ====================
-    const execTasks = new Map<string, ExecTask>();
+    // ==================== 共享 Context 和 Lock ====================
     const mapLock = new AsyncLock();
+    const taskChannelMap = new Map<string, { channel: string; target: string }>();
 
-    api.on('before_tool_call', async (event: any) => {
-      if (event.toolName !== 'Bash' && event.toolName !== 'exec') return;
+    // 创建共享的 handler context
+    const handlerContext: IHandlerContext = {
+      stateManager,
+      alertManager,
+      taskChainManager,
+      config,
+      mapLock,
+      taskChannelMap,
+      logger,
+    };
 
-      const params = event.params as { command?: string; timeout?: number };
-      const command = params.command || 'unknown command';
-      const execId = event.toolCallId || `exec-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    // Exec Handler（替换原有的直接实现）
+    const execHandler = new ExecHandler(handlerContext);
+    execHandler.register(api);
 
-      logger.info?.(`[task-monitor] Exec started: ${execId}`);
+    // Transcript Handler（主任务心跳更新）
+    const transcriptHandler = new TranscriptHandler(handlerContext);
+    transcriptHandler.register(api);
 
-      const sessionKey = event.sessionKey;
-      const channelInfo = sessionKey ? getSessionChannelInfo(sessionKey) : null;
-
-      mapLock.acquire('execTasks', () => {
-        execTasks.set(execId, {
-          startTime: Date.now(),
-          command,
-          runId: event.runId,
-          sessionKey,
-          channel: channelInfo?.channel,
-          target: channelInfo?.target,
-        });
-      });
-
-      if (stateManager) {
-        const minTimeout = 30000;
-        const execTimeout = Math.max(params.timeout || 0, minTimeout);
-
-        try {
-          await stateManager.registerTask({
-            id: execId,
-            type: 'exec',
-            status: 'running',
-            timeoutMs: execTimeout,
-            parentTaskId: event.runId || null,
-            maxRetries: 0,
-            // v5: 提升到顶级字段
-            sessionKey,
-            channel: channelInfo?.channel,
-            target: channelInfo?.target,
-            command: command.slice(0, 500),
-            metadata: {
-              toolName: event.toolName,
-            },
-          });
-        } catch (e: any) {
-          if (!e.message?.includes('已存在')) {
-            logger.error?.(`[task-monitor] Failed to register exec task: ${e}`);
-          }
-        }
-      }
-    });
-
-    api.on('after_tool_call', async (event: any) => {
-      if (event.toolName !== 'Bash' && event.toolName !== 'exec') return;
-
-      const execId = event.toolCallId || `exec-${Date.now()}`;
-      const execTask = execTasks.get(execId);
-
-      if (!execTask) return;
-
-      const duration = Date.now() - execTask.startTime;
-      const isError = !!event.error;
-      const isTimeout = event.error?.toLowerCase().includes('timeout') || false;
-
-      logger.info?.(`[task-monitor] Exec ended: ${execId}, duration: ${duration}ms`);
-
-      mapLock.acquire('execTasks', () => {
-        execTasks.delete(execId);
-      });
-
-      if (stateManager) {
-        const status = isError ? (isTimeout ? 'timeout' : 'failed') : 'completed';
-        await stateManager.updateTask(execId, {
-          status,
-          duration,
-          metadata: { error: event.error },
-        });
-
-        await stateManager.recordRetryOutcome(
-          execId,
-          isError ? (isTimeout ? 'timeout' : 'error') : 'ok',
-          event.error
-        );
-      }
-
-      if (isError) {
-        const errorMessage = event.error || 'Unknown error';
-        const commandPreview = execTask.command.slice(0, 100);
-        await sendNotification(
-          alertManager,
-          isTimeout ? 'exec_timeout' : 'exec_failed',
-          `⚠️ Exec ${isTimeout ? '超时' : '失败'}\n\n命令: ${commandPreview}\n错误: ${errorMessage.slice(0, 200)}`,
-          config,
-          execTask.channel,
-          execTask.target
-        );
-      }
-    });
+    // Agent Event Handler（lifecycle 事件处理）
+    const agentEventHandler = new AgentEventHandler(handlerContext);
+    agentEventHandler.register(api);
 
     // ==================== Turn 事件处理（主任务监控） ====================
     api.on('turn_started', async (event: any) => {
