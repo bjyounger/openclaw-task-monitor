@@ -1,5 +1,5 @@
 import { Task } from '../core/task';
-import type { ITaskConfig } from '../core/interfaces';
+import type { ITaskConfig, ITaskDependencies } from '../core/interfaces';
 
 /**
  * Exec 任务
@@ -17,12 +17,12 @@ export class ExecTask extends Task {
   /** 进程 ID */
   private pid: number | null = null;
   
-  constructor(config: ITaskConfig & { command: string }) {
+  constructor(config: ITaskConfig & { command: string }, dependencies: ITaskDependencies) {
     super({
       ...config,
       type: 'exec',
       metadata: { ...config.metadata, command: config.command },
-    });
+    }, dependencies);
     
     this.command = config.command;
   }
@@ -36,7 +36,7 @@ export class ExecTask extends Task {
   }
   
   protected async onStart(): Promise<void> {
-    Task.logger?.info?.(
+    this.logger?.info?.(
       `[ExecTask] Started: ${this.state.id}, command: ${this.command.slice(0, 100)}`
     );
   }
@@ -44,7 +44,7 @@ export class ExecTask extends Task {
   protected async onComplete(result?: unknown): Promise<void> {
     const duration = Date.now() - this.state.startTime;
     
-    Task.logger?.info?.(
+    this.logger?.info?.(
       `[ExecTask] Completed: ${this.state.id}, duration: ${duration}ms`
     );
   }
@@ -52,13 +52,13 @@ export class ExecTask extends Task {
   protected async onTimeout(): Promise<void> {
     const duration = Math.floor((Date.now() - this.state.startTime) / 1000);
     
-    Task.logger?.warn?.(
+    this.logger?.warn?.(
       `[ExecTask] Timeout: ${this.state.id}, duration: ${duration}s, command: ${this.command.slice(0, 100)}`
     );
   }
   
   protected async onAbandon(reason: string): Promise<void> {
-    Task.logger?.error?.(
+    this.logger?.error?.(
       `[ExecTask] Abandoned: ${this.state.id}, reason: ${reason}, command: ${this.command.slice(0, 100)}`
     );
   }

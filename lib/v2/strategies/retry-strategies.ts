@@ -1,4 +1,5 @@
-import type { IRetryStrategy, ErrorType } from '../core/interfaces';
+import type { IRetryStrategy } from '../core/interfaces';
+import type { ErrorType } from '../core/types';
 
 /**
  * 错误模式匹配规则

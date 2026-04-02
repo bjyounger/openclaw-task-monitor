@@ -1,9 +1,9 @@
 import type {
   IAlertObserver,
-  ITaskEvent,
   IAlertManager,
   INotificationStrategy,
 } from '../core/interfaces';
+import type { ITaskEvent } from '../core/types';
 
 /**
  * 告警观察者

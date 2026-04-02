@@ -1,10 +1,9 @@
 import type {
   IStateObserver,
-  ITaskEvent,
   ITaskState,
   IStateManager,
-  TaskEventType,
 } from '../core/interfaces';
+import type { ITaskEvent, TaskEventType } from '../core/types';
 
 /**
  * 状态观察者

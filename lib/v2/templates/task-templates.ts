@@ -1,4 +1,4 @@
-import type { ITaskTemplate, ITaskTemplateManager, ITaskFactory, ITaskConfig } from '../core/interfaces';
+import type { ITaskTemplate, ITaskTemplateManager, ITaskFactory, ITaskConfig, ITaskDependencies, ITask } from '../core/interfaces';
 
 /**
  * 任务模板管理器
@@ -42,6 +42,7 @@ export class TaskTemplateManager implements ITaskTemplateManager {
   public createFromTemplate(
     templateName: string,
     factory: ITaskFactory,
+    dependencies: ITaskDependencies,
     overrides?: Partial<ITaskConfig>
   ): ITask {
     const template = this.templates.get(templateName);
@@ -56,7 +57,7 @@ export class TaskTemplateManager implements ITaskTemplateManager {
       `[TemplateManager] Creating task from template: ${templateName} -> ${config.id}`
     );
     
-    return factory.createTask(config);
+    return factory.createTask(config, dependencies);
   }
   
   /**

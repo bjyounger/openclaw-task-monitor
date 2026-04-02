@@ -486,16 +486,4 @@ export interface IMetricsCollector {
   reset(): void;
 }
 
-export type {
-  ITaskState as default,
-  ILogger,
-  ITaskDependencies,
-  ITask,
-  ITaskObserver,
-  IStateManager,
-  IAlertManager,
-  IRetryStrategy,
-  INotificationStrategy,
-  ITaskDependencyManager,
-  IMetricsCollector,
-};
+// 接口已通过 export interface 定义，无需重复导出

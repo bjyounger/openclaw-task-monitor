@@ -1,9 +1,9 @@
 import type {
   ITimerObserver,
-  ITaskEvent,
   IStateManager,
   ITaskState,
 } from '../core/interfaces';
+import type { ITaskEvent } from '../core/types';
 
 /**
  * 超时观察者
@@ -41,12 +41,12 @@ export class TimerObserver implements ITimerObserver {
    * 检查超时任务
    * 由 TimerManager 定时调用
    */
-  public async checkTimeouts(): Promise<ITaskState[]> {
+  public async checkTimeouts(): Promise<void> {
     try {
       const timedOutTasks = await this.stateManager.getTimedOutTasks();
       
       if (timedOutTasks.length === 0) {
-        return [];
+        return;
       }
       
       this.logger?.info?.(
@@ -65,11 +65,8 @@ export class TimerObserver implements ITimerObserver {
           }
         }
       }
-      
-      return timedOutTasks;
     } catch (e) {
       this.logger?.error?.(`[TimerObserver] Error checking timeouts: ${e}`);
-      return [];
     }
   }
   

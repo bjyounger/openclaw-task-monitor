@@ -258,6 +258,13 @@ export abstract class BaseTask {
   }
 
   /**
+   * 获取最大重试次数
+   */
+  public get maxRetries(): number {
+    return this.retryConfig.maxRetries;
+  }
+
+  /**
    * 获取任务元数据
    */
   public get metadata(): Record<string, unknown> {
@@ -407,12 +414,13 @@ export abstract class BaseTask {
    * 从存储恢复任务状态
    */
   public async load(): Promise<boolean> {
-    if (!this.stateManager) {
+    const stateManager = this.stateManager;
+    if (!stateManager) {
       return false;
     }
 
     return BaseTask.lock.acquire(`load:${this.id}`, async () => {
-      const state = await this.stateManager.getTask(this.id);
+      const state = await stateManager.getTask(this.id);
       
       if (!state) {
         return false;
@@ -889,9 +897,10 @@ export class TaskFactory {
     return this.stateManager.registerTask({
       id: task.id,
       type: task.type,
+      status: task.status,
       timeoutMs: task.timeoutMs,
       parentTaskId: task.parentTaskId,
-      maxRetries: task.retryConfig.maxRetries,
+      maxRetries: task.maxRetries,
       metadata: task.metadata,
     });
   }

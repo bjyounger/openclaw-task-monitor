@@ -1,5 +1,5 @@
 import { Task } from '../core/task';
-import type { ITaskConfig } from '../core/interfaces';
+import type { ITaskConfig, ITaskDependencies } from '../core/interfaces';
 
 /**
  * 嵌入式任务
@@ -11,11 +11,11 @@ import type { ITaskConfig } from '../core/interfaces';
  * - 仅记录状态
  */
 export class EmbeddedTask extends Task {
-  constructor(config: ITaskConfig) {
+  constructor(config: ITaskConfig, dependencies: ITaskDependencies) {
     super({
       ...config,
       type: 'embedded',
-    });
+    }, dependencies);
     
     // 嵌入式任务默认不发送通知
     // 通过 metadata 控制是否通知
@@ -31,22 +31,22 @@ export class EmbeddedTask extends Task {
   
   protected async onStart(): Promise<void> {
     // 嵌入式任务静默启动
-    Task.logger?.debug?.(`[EmbeddedTask] Started: ${this.state.id}`);
+    this.logger?.debug?.(`[EmbeddedTask] Started: ${this.state.id}`);
   }
   
   protected async onComplete(result?: unknown): Promise<void> {
     // 嵌入式任务静默完成
-    Task.logger?.debug?.(`[EmbeddedTask] Completed: ${this.state.id}`);
+    this.logger?.debug?.(`[EmbeddedTask] Completed: ${this.state.id}`);
   }
   
   protected async onTimeout(): Promise<void> {
     // 嵌入式任务超时记录
-    Task.logger?.warn?.(`[EmbeddedTask] Timeout: ${this.state.id}`);
+    this.logger?.warn?.(`[EmbeddedTask] Timeout: ${this.state.id}`);
   }
   
   protected async onAbandon(reason: string): Promise<void> {
     // 嵌入式任务失败记录
-    Task.logger?.error?.(`[EmbeddedTask] Abandoned: ${this.state.id}, reason: ${reason}`);
+    this.logger?.error?.(`[EmbeddedTask] Abandoned: ${this.state.id}, reason: ${reason}`);
   }
 }
 

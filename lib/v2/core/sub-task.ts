@@ -1,5 +1,5 @@
 import { Task } from '../core/task';
-import type { ITaskConfig, ITask } from '../core/interfaces';
+import type { ITaskConfig, ITaskDependencies } from '../core/interfaces';
 
 /**
  * 子任务
@@ -20,11 +20,11 @@ export class SubTask extends Task {
   /** 进度报告间隔 (毫秒) */
   private progressInterval: number = 5 * 60 * 1000; // 5 分钟
   
-  constructor(config: ITaskConfig) {
+  constructor(config: ITaskConfig, dependencies: ITaskDependencies) {
     super({
       ...config,
       type: 'sub',
-    });
+    }, dependencies);
     
     // 从 metadata 中提取父会话 key
     this.parentSessionKey = config.metadata?.parentSessionKey as string || null;
@@ -39,7 +39,7 @@ export class SubTask extends Task {
   }
   
   protected async onStart(): Promise<void> {
-    Task.logger?.info?.(`[SubTask] Started: ${this.state.id}`);
+    this.logger?.info?.(`[SubTask] Started: ${this.state.id}`);
     
     // 启动进度报告
     this.startProgressReport();
@@ -49,7 +49,7 @@ export class SubTask extends Task {
   }
   
   protected async onComplete(result?: unknown): Promise<void> {
-    Task.logger?.info?.(`[SubTask] Completed: ${this.state.id}`);
+    this.logger?.info?.(`[SubTask] Completed: ${this.state.id}`);
     
     // 停止进度报告
     this.stopProgressReport();
@@ -64,7 +64,7 @@ export class SubTask extends Task {
   }
   
   protected async onTimeout(): Promise<void> {
-    Task.logger?.warn?.(`[SubTask] Timeout: ${this.state.id}`);
+    this.logger?.warn?.(`[SubTask] Timeout: ${this.state.id}`);
     
     // 停止进度报告
     this.stopProgressReport();
@@ -74,7 +74,7 @@ export class SubTask extends Task {
   }
   
   protected async onAbandon(reason: string): Promise<void> {
-    Task.logger?.error?.(`[SubTask] Abandoned: ${this.state.id}, reason: ${reason}`);
+    this.logger?.error?.(`[SubTask] Abandoned: ${this.state.id}, reason: ${reason}`);
     
     // 停止进度报告
     this.stopProgressReport();
@@ -97,7 +97,7 @@ export class SubTask extends Task {
       try {
         await this.reportProgress();
       } catch (e) {
-        Task.logger?.error?.(`[SubTask] Progress report error: ${e}`);
+        this.logger?.error?.(`[SubTask] Progress report error: ${e}`);
       }
     }, this.progressInterval);
   }
@@ -118,7 +118,7 @@ export class SubTask extends Task {
   private async reportProgress(): Promise<void> {
     const runtime = Math.floor((Date.now() - this.state.startTime) / 60000);
     
-    Task.logger?.debug?.(
+    this.logger?.debug?.(
       `[SubTask] Progress: ${this.state.id}, runtime: ${runtime}min, retry: ${this.state.retryCount}`
     );
     
@@ -136,7 +136,7 @@ export class SubTask extends Task {
     
     // 通过 API 发送系统事件到父会话
     // 参考 index.ts 中的 enqueueSystemEvent
-    Task.logger?.debug?.(
+    this.logger?.debug?.(
       `[SubTask] Notify parent: ${this.parentSessionKey}, status: ${status}`
     );
   }

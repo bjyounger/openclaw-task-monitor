@@ -410,7 +410,7 @@ export class InterruptHandler {
         metadata: {
           ...task.metadata,
           retryHistory: [
-            ...(task.metadata?.retryHistory || []),
+            ...(Array.isArray(task.metadata?.retryHistory) ? task.metadata.retryHistory : []),
             {
               attempt: newRetryCount,
               startTime: Date.now(),

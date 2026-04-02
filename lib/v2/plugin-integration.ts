@@ -12,9 +12,11 @@ import type {
   IRetryStrategy,
   INotificationStrategy,
   ITaskObserver,
-  ITaskEvent,
   ILogger,
+  ITaskState,
+  ITaskDependencies,
 } from './core/interfaces';
+import type { ITaskEvent, TaskType } from './core/types';
 
 import { TaskEventEmitter } from './core/event-emitter';
 import { TaskFactory } from './factory/task-factory';
@@ -68,32 +70,34 @@ export interface ITaskSystem {
 class StateManagerAdapter implements IStateManager {
   constructor(private v1StateManager: V1StateManager) {}
   
-  async registerTask(task: Parameters<IStateManager['registerTask']>[0]): Promise<ReturnType<IStateManager['registerTask']>> {
-    return this.v1StateManager.registerTask(task);
+  registerTask(task: Partial<ITaskState> & { id: string; type: TaskType }): Promise<ITaskState> {
+    return this.v1StateManager.registerTask(task as any) as Promise<ITaskState>;
   }
   
-  async getTask(taskId: string): Promise<ReturnType<IStateManager['getTask']>> {
-    return this.v1StateManager.getTask(taskId);
+  getTask(taskId: string): Promise<ITaskState | null> {
+    return this.v1StateManager.getTask(taskId) as Promise<ITaskState | null>;
   }
   
-  async updateTask(taskId: string, updates: Parameters<IStateManager['updateTask']>[1]): Promise<void> {
-    return this.v1StateManager.updateTask(taskId, updates);
+  updateTask(taskId: string, updates: Partial<ITaskState>): Promise<void> {
+    return this.v1StateManager.updateTask(taskId, updates as any).then(() => {});
   }
   
-  async deleteTask(taskId: string): Promise<void> {
-    return this.v1StateManager.deleteTask(taskId);
+  deleteTask(taskId: string): Promise<void> {
+    return this.v1StateManager.removeTask(taskId).then(() => {});
   }
   
-  async heartbeat(taskId: string): Promise<boolean> {
+  heartbeat(taskId: string): Promise<boolean> {
     return this.v1StateManager.heartbeat(taskId);
   }
   
-  async getTimedOutTasks(): Promise<ReturnType<IStateManager['getTimedOutTasks']>> {
-    return this.v1StateManager.getTimedOutTasks();
+  getTimedOutTasks(): Promise<ITaskState[]> {
+    return this.v1StateManager.checkTimeouts() as Promise<ITaskState[]>;
   }
   
-  async getActiveTasks(): Promise<ReturnType<IStateManager['getActiveTasks']>> {
-    return this.v1StateManager.getActiveTasks();
+  getActiveTasks(): Promise<ITaskState[]> {
+    return this.v1StateManager.getAllTasks().then(tasks => 
+      tasks.filter(t => t.status === 'running' || t.status === 'pending') as ITaskState[]
+    );
   }
 }
 
@@ -202,8 +206,16 @@ export function initializeTaskSystem(config: ITaskSystemConfig): ITaskSystem {
     eventEmitter.addListener(observers.retry as any);
   }
   
+  // 创建依赖注入对象
+  const dependencies: ITaskDependencies = {
+    eventEmitter,
+    retryStrategy,
+    notificationStrategy,
+    logger,
+  };
+  
   // 创建任务工厂
-  const factory = new TaskFactory(logger);
+  const factory = new TaskFactory(dependencies, logger);
   
   logger.info?.('[TaskSystem] V2 Task system initialized', {
     observers: Object.keys(observers),
@@ -226,7 +238,11 @@ export function initializeTaskSystem(config: ITaskSystemConfig): ITaskSystem {
  * 关闭任务系统
  */
 export function shutdownTaskSystem(system: ITaskSystem): void {
-  system.eventEmitter.destroy();
+  // 清除所有监听器
+  const listeners = system.eventEmitter.getListeners();
+  for (const listener of listeners) {
+    system.eventEmitter.removeListener(listener);
+  }
 }
 
 /**

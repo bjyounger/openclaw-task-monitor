@@ -1,10 +1,10 @@
+import type { IMetricsCollector } from './interfaces';
 import type {
-  IMetricsCollector,
   ITaskMetrics,
   TaskType,
   TaskPriority,
   ErrorType,
-} from './interfaces';
+} from './types';
 
 /**
  * 任务指标收集器

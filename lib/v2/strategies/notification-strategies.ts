@@ -1,4 +1,5 @@
-import type { INotificationStrategy, ITaskEvent, TaskEventType } from '../core/interfaces';
+import type { INotificationStrategy } from '../core/interfaces';
+import type { ITaskEvent, TaskEventType } from '../core/types';
 
 /**
  * 默认通知策略
@@ -56,7 +57,7 @@ export class DefaultNotificationStrategy implements INotificationStrategy {
     
     switch (event.type) {
       case 'task_failed':
-        const error = event.data?.error || event.data?.reason || 'Unknown error';
+        const error = String(event.data?.error || event.data?.reason || 'Unknown error');
         message = `❌ 任务失败\n\n任务: ${taskName}\n类型: ${taskType}${retryInfo}\n错误: ${this.truncate(error, 200)}`;
         break;
       
@@ -77,7 +78,7 @@ export class DefaultNotificationStrategy implements INotificationStrategy {
         break;
       
       case 'task_abandoned':
-        const reason = event.data?.reason || 'Unknown';
+        const reason = String(event.data?.reason || 'Unknown');
         message = `❌ 任务最终失败\n\n任务: ${taskName}\n类型: ${taskType}${retryInfo}\n原因: ${this.truncate(reason, 200)}`;
         break;
       

@@ -10,13 +10,15 @@ import type {
   INotificationStrategy,
   ILogger,
   IMetricsCollector,
+} from './interfaces';
+import type {
   TaskType,
   TaskStatus,
   TaskEventType,
   TaskPriority,
   ErrorType,
   ITaskEvent,
-} from './interfaces';
+} from './types';
 
 /**
  * 任务抽象基类（优化版）

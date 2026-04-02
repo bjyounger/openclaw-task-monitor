@@ -181,6 +181,11 @@ export class ActivityTracker {
   /** API 引用 */
   private api: OpenClawPluginApi | null = null;
   
+  /** 日志器访问器 */
+  private get logger(): any {
+    return this.api?.logger;
+  }
+  
   /** 活跃检测定时器 */
   private activityTimer: NodeJS.Timeout | null = null;
   
@@ -207,7 +212,13 @@ export class ActivityTracker {
     toolTimeouts: Partial<Record<string, number>> = {}
   ) {
     this.config = { ...DEFAULT_ACTIVITY_TRACKER_CONFIG, ...config };
-    this.toolTimeouts = { ...DEFAULT_TOOL_TIMEOUTS, ...toolTimeouts };
+    // 过滤掉 undefined 值
+    this.toolTimeouts = { 
+      ...DEFAULT_TOOL_TIMEOUTS, 
+      ...Object.fromEntries(
+        Object.entries(toolTimeouts).filter(([_, v]) => v !== undefined)
+      ) 
+    } as Record<string, number>;
   }
 
   /**

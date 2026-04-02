@@ -1,4 +1,4 @@
-import type { ITaskFactory, ITask, ITaskState, ITaskConfig, ITaskConstructor, ITaskEventEmitter } from '../core/interfaces';
+import type { ITaskFactory, ITask, ITaskState, ITaskConfig, ITaskConstructor, ITaskEventEmitter, ITaskDependencies } from '../core/interfaces';
 import { MainTask } from '../core/main-task';
 import { SubTask } from '../core/sub-task';
 import { ExecTask } from '../core/exec-task';
@@ -17,13 +17,16 @@ export class TaskFactory implements ITaskFactory {
   /** 日志器 */
   private logger: any;
   
-  constructor(logger?: any) {
-    this.logger = logger;
+  /** 依赖注入 */
+  private dependencies: ITaskDependencies;
+  
+  constructor(dependencies: ITaskDependencies, logger?: any) {
+    this.dependencies = dependencies;
+    this.logger = logger ?? dependencies.logger;
     
-    // 注册默认任务类型
+    // 注册默认任务类型（不包含 ExecTask，因为需要额外参数）
     this.registerTaskType('main', MainTask);
     this.registerTaskType('sub', SubTask);
-    this.registerTaskType('exec', ExecTask);
     this.registerTaskType('embedded', EmbeddedTask);
   }
   
@@ -33,18 +36,18 @@ export class TaskFactory implements ITaskFactory {
   public createTask(config: ITaskConfig): ITask {
     const TaskClass = this.taskTypes.get(config.type);
     
+    // 特殊处理 ExecTask
+    if (config.type === 'exec' && config.metadata?.command) {
+      return new ExecTask(config as ITaskConfig & { command: string }, this.dependencies);
+    }
+    
     if (!TaskClass) {
       throw new Error(`Unknown task type: ${config.type}`);
     }
     
     this.logger?.debug?.(`[TaskFactory] Creating task: ${config.id} (${config.type})`);
     
-    // 特殊处理 ExecTask
-    if (config.type === 'exec' && config.metadata?.command) {
-      return new ExecTask(config as ITaskConfig & { command: string });
-    }
-    
-    return new TaskClass(config);
+    return new TaskClass(config, this.dependencies);
   }
   
   /**
@@ -53,7 +56,7 @@ export class TaskFactory implements ITaskFactory {
   public restoreTask(state: ITaskState): ITask | null {
     const TaskClass = this.taskTypes.get(state.type);
     
-    if (!TaskClass) {
+    if (!TaskClass && state.type !== 'exec') {
       this.logger?.error?.(`[TaskFactory] Unknown task type for restore: ${state.type}`);
       return null;
     }

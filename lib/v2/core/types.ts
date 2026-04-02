@@ -16,7 +16,8 @@ export type TaskStatus =
   | 'timeout'    // 超时
   | 'scheduled'  // 已安排重试
   | 'abandoned'  // 放弃（重试耗尽）
-  | 'killed';    // 用户终止
+  | 'killed'     // 用户终止
+  | 'interrupted'; // 被中断
 
 /**
  * 任务事件类型
@@ -154,15 +155,4 @@ export interface ITaskMetrics {
   };
 }
 
-export type {
-  TaskType as default,
-  TaskStatus,
-  TaskEventType,
-  TaskPriority,
-  ErrorType,
-  ITaskEvent,
-  IRetryRecord,
-  INotificationRecord,
-  ITaskDependency,
-  ITaskMetrics,
-};
+// 类型已通过 export type 定义，无需重复导出

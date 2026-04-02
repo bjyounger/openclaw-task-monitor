@@ -1,9 +1,9 @@
 import type {
   IRetryObserver,
-  ITaskEvent,
   IRetryManager,
   IRetryStrategy,
 } from '../core/interfaces';
+import type { ITaskEvent } from '../core/types';
 
 /**
  * 重试观察者

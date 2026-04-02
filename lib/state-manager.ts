@@ -17,8 +17,9 @@ export type TaskType = 'main' | 'sub' | 'embedded' | 'exec';
  * - scheduled: 已安排重试，等待延迟后执行
  * - abandoned: 放弃（重试耗尽）
  * - killed: 用户终止（不可重试）
+ * - interrupted: 被中断
  */
-export type TaskStatus = 'pending' | 'running' | 'completed' | 'failed' | 'timeout' | 'scheduled' | 'abandoned' | 'killed';
+export type TaskStatus = 'pending' | 'running' | 'completed' | 'failed' | 'timeout' | 'scheduled' | 'abandoned' | 'killed' | 'interrupted';
 
 /**
  * 重试记录
