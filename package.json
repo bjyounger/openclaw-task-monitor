@@ -1,7 +1,7 @@
 {
   "name": "task-monitor",
   "version": "14.0.0",
-  "description": "监控子任务生命周期并自动重试（v12）",
+  "description": "OpenClaw 监控插件：子任务监控、自动重试、任务链追踪、超时检测",
   "main": "index.ts",
   "scripts": {
     "test": "vitest run",

@@ -1,7 +1,7 @@
 {
   "id": "task-monitor",
   "name": "Task Monitor",
-  "version": "12.1.0",
+  "version": "14.0.0",
   "description": "监控子任务生命周期、自动重试、任务链追踪、进度报告、主任务监控、停滞检测、超时检测、exec进程监控、失败实时上报、系统健康保障",
   "openclaw": {
     "extensions": ["./index.ts"]

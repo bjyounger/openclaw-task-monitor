@@ -26,7 +26,7 @@ function convertV1ToV2(v1State: V1TaskState): ITaskState {
     timeoutMs: v1State.timeoutMs,
     parentTaskId: v1State.parentTaskId,
     retryCount: v1State.retryCount,
-    maxRetries: v1State.maxRetries,
+    maxRetries: v1State.maxRetries ?? 2,
     lastRetryTime: v1State.lastRetryTime,
     retryHistory: v1State.retryHistory.map(r => ({
       attemptNumber: r.attemptNumber,
@@ -58,7 +58,7 @@ function convertV2ToV1Updates(v2Updates: Partial<ITaskState>): Partial<V1TaskSta
     v1Updates.retryCount = v2Updates.retryCount;
   }
   if (v2Updates.maxRetries !== undefined) {
-    v1Updates.maxRetries = v2Updates.maxRetries;
+    v1Updates.maxRetries = v2Updates.maxRetries ?? 2;
   }
   if (v2Updates.lastRetryTime !== undefined) {
     v1Updates.lastRetryTime = v2Updates.lastRetryTime;

@@ -354,7 +354,7 @@ export class InterruptHandler {
       }
       
       // 检查重试次数
-      if (task.retryCount >= task.maxRetries) {
+      if (task.retryCount >= (task.maxRetries ?? 2)) {
         this.api?.logger.warn?.(`[interrupt-handler] Task exhausted retries, marking as failed: ${runId}`);
         await this.stateManager.updateTask(runId, { status: 'failed' });
         await this.sendExhaustedAlert(runId, task);

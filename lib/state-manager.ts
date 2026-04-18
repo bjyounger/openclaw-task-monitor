@@ -70,7 +70,7 @@ export interface TaskState {
   /** 当前重试次数 (0, 1, 2) */
   retryCount: number;
   /** 最大重试次数，默认 2 */
-  maxRetries: number;
+  maxRetries?: number;
   /** 最后一次重试时间 */
   lastRetryTime?: number;
   /** 重试历史记录 */
@@ -573,7 +573,7 @@ export class StateManager {
       }
 
       // 检查是否还能重试
-      if (task.retryCount >= task.maxRetries) {
+      if (task.retryCount >= (task.maxRetries ?? 2)) {
         throw new Error(`重试次数已达上限: ${runId}`);
       }
 
@@ -742,7 +742,7 @@ export class StateManager {
       }
 
       // 检查重试次数
-      return task.retryCount < task.maxRetries;
+      return task.retryCount < (task.maxRetries ?? 2);
     });
   }
 
