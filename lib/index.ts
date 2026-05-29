@@ -1,8 +1,8 @@
 export { StateManager } from './state-manager';
-export type { 
-  TaskState, 
-  TaskType, 
-  TaskStatus, 
+export type {
+  TaskState,
+  TaskType,
+  TaskStatus,
   StateFile,
   RetryRecord,
   ScheduledRetry,
@@ -30,13 +30,21 @@ export { ConfigInjector } from './config-injector';
 export type { InjectableConfig, InjectConfig } from './config-injector';
 
 // 新增：活跃追踪模块
-export { 
-  ActivityTracker, 
-  getActivityTracker, 
+export {
+  ActivityTracker,
+  getActivityTracker,
   resetActivityTracker,
   DEFAULT_ACTIVITY_TRACKER_CONFIG,
   DEFAULT_TOOL_TIMEOUTS,
 } from './activity-tracker';
+
+// Token Budget Checker
+export {
+  TokenBudgetChecker,
+  createTokenBudgetChecker,
+  DEFAULT_TOKEN_BUDGET_CONFIG,
+} from './token-budget-checker';
+export type { TokenBudgetConfig, BudgetCheckResult } from './token-budget-checker';
 export type {
   ActivityState,
   SessionType,
@@ -47,10 +55,10 @@ export type {
   HookRegistrationStatus,
 } from './activity-tracker';
 
-// 新增：中断处理模块
-export { 
-  InterruptHandler, 
-  getInterruptHandler, 
+// 新增:中断处理模块
+export {
+  InterruptHandler,
+  getInterruptHandler,
   resetInterruptHandler,
   DEFAULT_INTERRUPT_HANDLER_CONFIG,
 } from './interrupt-handler';
@@ -61,10 +69,10 @@ export type {
   InterruptHandlerConfig,
 } from './interrupt-handler';
 
-// 新增：健康检查模块
-export { 
-  HealthChecker, 
-  getHealthChecker, 
+// 新增:健康检查模块
+export {
+  HealthChecker,
+  getHealthChecker,
   resetHealthChecker,
   DEFAULT_HEALTH_CHECKER_CONFIG,
 } from './health-checker';
@@ -73,7 +81,7 @@ export type {
   HealthCheckerConfig,
 } from './health-checker';
 
-// 新增：记忆管理模块
+// 新增:记忆管理模块
 export {
   MemoryManager,
   TaskSummaryGenerator,
@@ -87,7 +95,7 @@ export type {
   TranscriptExtractor,
 } from './memory';
 
-// 新增：统一定时器管理模块
+// 新增:统一定时器管理模块
 export {
   TimerManager,
   getTimerManager,
@@ -102,7 +110,7 @@ export type {
   TimerManagerConfig,
 } from './TimerManager';
 
-// 新增：Task 基类模块
+// 新增:Task 基类模块
 export {
   BaseTask,
   MainTask,

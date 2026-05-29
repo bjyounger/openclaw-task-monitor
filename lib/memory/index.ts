@@ -189,6 +189,11 @@ export class MemoryManager {
     this.api.logger.info?.('[memory-manager] Starting refinement...');
 
     try {
+      if (this.destroyed) {
+        this.api.logger.warn?.('[memory-manager] Cannot run refinement: manager destroyed');
+        return;
+      }
+
       // 获取高频访问项
       const highAccessItems = this.accessTracker.getHighAccessItems(
         this.config.accessThreshold
@@ -199,16 +204,86 @@ export class MemoryManager {
         return;
       }
 
-      // TODO: 实现提升到知识库的逻辑
-      // 当前仅记录日志
       this.api.logger.info?.(
         `[memory-manager] Found ${highAccessItems.length} high-access items: ${highAccessItems.join(', ')}`
       );
 
+      // 提升高频访问项到知识库
+      const fs = await import('fs');
+      const path = await import('path');
+
+      const knowledgeBaseDir = this.config.knowledgeBasePath || path.join(this.config.consolidationPath, 'knowledge-base');
+      const knowledgeTaskDir = path.join(knowledgeBaseDir, 'tasks');
+      
+      // 确保知识库目录存在
+      if (!fs.existsSync(knowledgeTaskDir)) {
+        fs.mkdirSync(knowledgeTaskDir, { recursive: true });
+        this.api.logger.info?.(`[memory-manager] Created knowledge base directory: ${knowledgeTaskDir}`);
+      }
+
+      let promotedCount = 0;
+      const promotedIds: string[] = [];
+
+      for (const runId of highAccessItems) {
+        try {
+          // 获取任务状态
+          const task = await this.stateManager.getTask(runId);
+          if (!task) {
+            this.api.logger.debug?.(`[memory-manager] Task not found in state: ${runId}`);
+            continue;
+          }
+
+          // 构造源文件路径（情境记忆中的摘要）
+          const summariesDir = path.join(this.config.consolidationPath, 'summaries');
+          const sourceFile = path.join(summariesDir, `${runId}.md`);
+          
+          if (!fs.existsSync(sourceFile)) {
+            this.api.logger.debug?.(`[memory-manager] Summary file not found: ${sourceFile}`);
+            continue;
+          }
+
+          // 读取摘要内容
+          const summaryContent = fs.readFileSync(sourceFile, 'utf-8');
+          
+          // 检查是否已提升
+          if (summaryContent.includes('<!-- promoted: true -->')) {
+            this.api.logger.debug?.(`[memory-manager] Task already promoted: ${runId}`);
+            continue;
+          }
+
+          // 构造目标文件名（时间+任务名称）
+          const taskName = task.label || (task.metadata?.taskDescription as string) || (task.metadata?.label as string) || 'unnamed';
+          const safeName = taskName.replace(/[^\w\u4e00-\u9fa5-]/g, '_').substring(0, 50);
+          const timestamp = new Date(task.startTime).toISOString().split('T')[0];
+          const targetFile = path.join(knowledgeTaskDir, `${timestamp}-${safeName}.md`);
+
+          // 添加提升标记
+          const promotedContent = summaryContent + '\n\n<!-- promoted: true -->\n<!-- promoted_from: episodic -->\n<!-- promoted_at: ' + new Date().toISOString() + ' -->';
+
+          // 写入知识库
+          fs.writeFileSync(targetFile, promotedContent, 'utf-8');
+          this.api.logger.info?.(`[memory-manager] ✅ Promoted task summary to knowledge base: ${runId} -> ${targetFile}`);
+
+          // 更新原始摘要文件标记为已提升
+          const updatedOriginal = summaryContent + '\n\n<!-- promoted: true -->\n<!-- knowledge_file: ' + targetFile + ' -->';
+          fs.writeFileSync(sourceFile, updatedOriginal, 'utf-8');
+
+          promotedCount++;
+          promotedIds.push(runId);
+        } catch (promoteError) {
+          this.api.logger.error?.(
+            `[memory-manager] Failed to promote task ${runId}:`,
+            promoteError
+          );
+        }
+      }
+
       // 持久化访问计数
       await this.accessTracker.persist();
 
-      this.api.logger.info?.('[memory-manager] Refinement complete');
+      this.api.logger.info?.(
+        `[memory-manager] Refinement complete: promoted ${promotedCount}/${highAccessItems.length} items (${promotedIds.join(', ')})`
+      );
     } catch (error) {
       this.api.logger.error?.('[memory-manager] Refinement failed:', error);
     }

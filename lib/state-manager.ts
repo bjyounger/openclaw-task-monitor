@@ -845,6 +845,88 @@ export class StateManager {
       return state.tasks.filter(t => t.status === 'running' || t.status === 'pending');
     });
   }
+
+  /**
+   * 清理过期任务
+   * - 清理已完成且超过 7 天的任务
+   * - 清理失败且超过 7 天的任务
+   * - 标记运行超过 24 小时的任务为 stale
+   * @returns 清理统计
+   */
+  public async cleanupStaleTasks(): Promise<{
+    removedCompleted: number;
+    removedFailed: number;
+    markedStale: number;
+    totalBefore: number;
+    totalAfter: number;
+  }> {
+    return this.withLock(async () => {
+      const state = this.readState();
+      const now = Date.now();
+      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000; // 7 天
+      const twentyFourHoursMs = 24 * 60 * 60 * 1000; // 24 小时
+
+      const totalBefore = state.tasks.length;
+      let removedCompleted = 0;
+      let removedFailed = 0;
+      let markedStale = 0;
+
+      // 过滤要保留的任务
+      state.tasks = state.tasks.filter(task => {
+        // 清理已完成且超过 7 天的任务
+        if (task.status === 'completed') {
+          const age = now - task.lastHeartbeat;
+          if (age > sevenDaysMs) {
+            removedCompleted++;
+            return false; // 移除
+          }
+        }
+
+        // 清理失败/abandoned 且超过 7 天的任务
+        if (task.status === 'failed' || task.status === 'abandoned') {
+          const age = now - task.lastHeartbeat;
+          if (age > sevenDaysMs) {
+            removedFailed++;
+            return false; // 移除
+          }
+        }
+
+        // 清理 timeout/killed/interrupted 且超过 7 天的任务
+        if (task.status === 'timeout' || task.status === 'killed' || task.status === 'interrupted') {
+          const age = now - task.lastHeartbeat;
+          if (age > sevenDaysMs) {
+            removedFailed++;
+            return false; // 移除
+          }
+        }
+
+        return true; // 保留
+      });
+
+      // 标记运行超过 24 小时的任务为 stale（通过 metadata 标记）
+      for (const task of state.tasks) {
+        if (task.status === 'running') {
+          const runningTime = now - task.startTime;
+          if (runningTime > twentyFourHoursMs && !task.metadata?.stale) {
+            task.metadata = { ...task.metadata, stale: true, staleSince: now };            markedStale++;
+          }
+        }
+      }
+
+      const totalAfter = state.tasks.length;
+
+      if (removedCompleted > 0 || removedFailed > 0 || markedStale > 0) {
+        this.writeState(state);
+      }
+
+      return {
+        removedCompleted,
+        removedFailed,
+        markedStale,
+        totalBefore,
+        totalAfter,
+      };    });
+  }
 }
 
 export default StateManager;

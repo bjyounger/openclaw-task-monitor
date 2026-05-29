@@ -152,6 +152,16 @@ export interface TaskMonitorConfig {
   alertDeduplication?: AlertDeduplicationConfig;
   degradation?: DegradationConfig;
   memory?: MemoryModuleConfig;
+  tokenBudget?: {
+    /** 是否启用 */
+    enabled?: boolean;
+    /** 检查间隔（毫秒） */
+    checkIntervalMs?: number;
+    /** 各文件预算 */
+    budgets?: {
+      [filename: string]: number;
+    };
+  };
   timers?: {
     /** 是否使用旧版定时器（回滚开关） */
     useLegacy?: boolean;
@@ -190,8 +200,8 @@ const DEFAULT_CONFIG: TaskMonitorConfig = {
   },
   
   notification: {
-    channel: "wecom",
-    target: "wecom-agent:YangKe",
+    channel: "feishu",
+    target: "ou_1c7220e82babe7c3eb4687b8cbf1c9e7",
     enabled: true,
     throttle: 3000,
     maxMessageLength: 200,
@@ -401,7 +411,7 @@ function validateConfig(config: TaskMonitorConfig): string[] {
   }
   
   // 通知参数验证
-  if (!["wecom", "telegram", "discord", "none"].includes(config.notification.channel)) {
+  if (!["feishu", "telegram", "discord", "signal", "none"].includes(config.notification.channel)) {
     warnings.push(`notification.channel (${config.notification.channel}) invalid, using default`);
     config.notification.channel = DEFAULT_CONFIG.notification.channel;
   }

@@ -51,7 +51,7 @@ export class NotificationAdapter {
 
   constructor(config: NotificationConfig = {}) {
     this.config = {
-      defaultChannel: config.defaultChannel || 'wecom',
+      defaultChannel: config.defaultChannel || 'feishu',
       defaultTarget: config.defaultTarget || '',
       enabled: config.enabled !== false, // 默认启用
     };
@@ -77,7 +77,7 @@ export class NotificationAdapter {
       return false;
     }
 
-    const actualChannel = channel || this.config.defaultChannel || 'wecom';
+    const actualChannel = channel || this.config.defaultChannel || 'feishu';
     const actualTarget = target || this.config.defaultTarget;
 
     if (!actualTarget) {
